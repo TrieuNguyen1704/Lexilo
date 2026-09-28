@@ -84,6 +84,24 @@ try {
   const allDeckCardsAgain = await request("GET", `/api/decks/${encodeURIComponent(deck.id)}/cards?scope=all`);
   assert.equal(allDeckCardsAgain.cards.find((card) => card.id === testCardId).due, dueAfterReview);
 
+  // Test Deck CRUD: Create, Update, Delete
+  const deckCreatedState = await request("POST", "/api/decks", { name: "Deck Integration Test", color: "#2563eb" });
+  const createdDeck = deckCreatedState.decks.find((d) => d.name === "Deck Integration Test");
+  assert.ok(createdDeck);
+  assert.equal(createdDeck.color, "#2563eb");
+
+  const deckUpdatedState = await request("PUT", `/api/decks/${encodeURIComponent(createdDeck.id)}`, {
+    name: "Deck Integration Test Updated",
+    color: "#ec4899",
+  });
+  const updatedDeck = deckUpdatedState.decks.find((d) => d.id === createdDeck.id);
+  assert.ok(updatedDeck);
+  assert.equal(updatedDeck.name, "Deck Integration Test Updated");
+  assert.equal(updatedDeck.color, "#ec4899");
+
+  const deckDeletedState = await request("DELETE", `/api/decks/${encodeURIComponent(createdDeck.id)}`);
+  assert.ok(!deckDeletedState.decks.some((d) => d.id === createdDeck.id));
+
   const batch = await request("POST", "/api/reviews/batch", { results: [{ cardId: testCardId, rating: "good" }] });
   assert.equal(batch.scheduled.length, 1);
 

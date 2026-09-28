@@ -375,16 +375,42 @@ async function handleApi(req, res, url) {
     return sendJson(res, { deck, scope, cards: getDeckCards(deckId, scope === "due") });
   }
 
+  const deckMatch = url.pathname.match(/^\/api\/decks\/([^/]+)$/);
+  if (deckMatch && req.method === "PUT") {
+    const payload = await readBody(req);
+    const name = String(payload.name || "").trim();
+    if (!name) return sendError(res, 400, "Tên bộ thẻ không hợp lệ");
+    const deckId = decodeURIComponent(deckMatch[1]);
+    const existing = db.prepare("SELECT id, color FROM decks WHERE id=?").get(deckId);
+    if (!existing) return sendError(res, 404, "Không tìm thấy bộ thẻ");
+    const color = String(payload.color || existing.color || "#ff6b4a").trim();
+    db.prepare("UPDATE decks SET name=?, color=? WHERE id=?").run(name, color, deckId);
+    return sendJson(res, getState());
+  }
+
+  if (deckMatch && req.method === "DELETE") {
+    const deckId = decodeURIComponent(deckMatch[1]);
+    const existing = db.prepare("SELECT 1 FROM decks WHERE id=?").get(deckId);
+    if (!existing) return sendError(res, 404, "Không tìm thấy bộ thẻ");
+    const totalDecks = db.prepare("SELECT count(*) as count FROM decks").get().count;
+    if (totalDecks <= 1) {
+      return sendError(res, 400, "Không thể xóa bộ thẻ duy nhất còn lại. Hãy tạo bộ thẻ mới trước khi xóa.");
+    }
+    db.prepare("DELETE FROM decks WHERE id=?").run(deckId);
+    return sendJson(res, getState());
+  }
+
   if (req.method === "POST" && url.pathname === "/api/decks") {
     const payload = await readBody(req);
     const name = String(payload.name || "").trim();
     if (!name) return sendError(res, 400, "Tên bộ thẻ không hợp lệ");
-    const colors = ["#ff6b4a", "#6c63ff", "#17a673", "#e9a11b"];
+    const colors = ["#ff6b4a", "#6c63ff", "#17a673", "#e9a11b", "#2563eb", "#ec4899", "#0d9488"];
     const count = db.prepare("SELECT count(*) AS n FROM decks").get().n;
+    const color = String(payload.color || colors[Number(count) % colors.length]).trim();
     db.prepare("INSERT INTO decks(id,name,color,created_at) VALUES(?,?,?,?)").run(
       crypto.randomUUID(),
       name,
-      colors[Number(count) % colors.length],
+      color,
       new Date().toISOString(),
     );
     return sendJson(res, getState(), 201);

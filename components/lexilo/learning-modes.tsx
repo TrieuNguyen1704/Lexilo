@@ -69,23 +69,29 @@ function ModeHeader({ title, subtitle, onBack, trailing }: { title: string; subt
 }
 
 function RatingButtons({ onRate, disabled }: { onRate: (rating: Rating) => void; disabled?: boolean }) {
-  const ratings: [Rating, string, string, string][] = [
-    ["again", "Quên", "10 phút", "#ef4444"],
-    ["hard", "Khó", "1 ngày", "#e9a11b"],
-    ["good", "Tốt", "Tự tính", "#17a673"],
-    ["easy", "Dễ", "4+ ngày", "#6c63ff"],
+  const ratings: [Rating, string, string, string, string][] = [
+    ["again", "Quên", "10 phút", "#ef4444", "1"],
+    ["hard", "Khó", "1 ngày", "#e9a11b", "2"],
+    ["good", "Tốt", "Tự tính", "#17a673", "3"],
+    ["easy", "Dễ", "4+ ngày", "#6c63ff", "4"],
   ];
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {ratings.map(([rating, label, hint, color]) => (
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      {ratings.map(([rating, label, hint, color, key]) => (
         <button
           key={rating}
           disabled={disabled}
           onClick={() => onRate(rating)}
-          className="rounded-2xl border bg-white p-3 font-black transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50"
-          style={{ color }}
+          className="group relative rounded-2xl border-2 bg-white p-3.5 text-center font-black transition-all hover:-translate-y-1 hover:shadow-lg disabled:opacity-50"
+          style={{ borderColor: `${color}35` }}
         >
-          {label}<span className="block text-xs text-slate-400">{hint}</span>
+          <div className="flex items-center justify-center gap-1.5" style={{ color }}>
+            <kbd className="inline-flex size-5 items-center justify-center rounded-md border bg-slate-50 font-mono text-[11px] font-bold text-slate-500 shadow-2xs">
+              {key}
+            </kbd>
+            <span className="text-base">{label}</span>
+          </div>
+          <span className="mt-1 block text-xs font-semibold text-slate-400">{hint}</span>
         </button>
       ))}
     </div>
@@ -112,6 +118,58 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: { cards: Card[]
     }
   }
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (done || !card) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable ||
+          target.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      if (event.code === "Space" || event.key === " ") {
+        event.preventDefault();
+        setRevealed((prev) => !prev);
+        return;
+      }
+
+      if (event.key === "1") {
+        event.preventDefault();
+        rate("again");
+        return;
+      }
+      if (event.key === "2") {
+        event.preventDefault();
+        rate("hard");
+        return;
+      }
+      if (event.key === "3") {
+        event.preventDefault();
+        rate("good");
+        return;
+      }
+      if (event.key === "4") {
+        event.preventDefault();
+        rate("easy");
+        return;
+      }
+
+      if (event.key.toLowerCase() === "r" || event.key.toLowerCase() === "a") {
+        event.preventDefault();
+        speak(card);
+        return;
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [done, card, revealed, busy]);
+
   return (
     <div className="mx-auto max-w-2xl">
       <ModeHeader title="Ôn theo lịch" subtitle={`${title} · chỉ các thẻ đã đến hạn`} onBack={onBack} />
@@ -123,29 +181,110 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: { cards: Card[]
             <Progress value={(index / ids.length) * 100} />
             <b className="whitespace-nowrap text-sm text-slate-500">{index + 1} / {ids.length}</b>
           </div>
-          <div className="flex min-h-[430px] flex-col rounded-[30px] border bg-white p-7 shadow-xl sm:p-10">
-            <div className="text-center text-xs font-black uppercase tracking-[.18em] text-[#6c63ff]">Ôn theo lịch FSRS</div>
-            <div className="flex flex-1 items-center justify-center text-center">
-              <div>
-                <div className="flex items-center justify-center gap-2">
-                  <h2 className="text-3xl font-black sm:text-4xl">{card.front}</h2>
-                  <button onClick={() => speak(card)} aria-label={`Phát âm ${card.front}`} className="rounded-full p-2 text-slate-400 hover:bg-slate-100"><Volume2 /></button>
+
+          {/* Quizlet-style 3D Flashcard */}
+          <div
+            className="perspective-1000 w-full min-h-[420px] cursor-pointer select-none"
+            onClick={() => setRevealed((value) => !value)}
+            role="button"
+            tabIndex={0}
+            aria-label="Thẻ ghi nhớ. Bấm phím Space hoặc nhấp chuột để lật thẻ."
+          >
+            <div
+              className={`relative min-h-[420px] w-full rounded-[30px] transition-transform duration-500 transform-style-3d shadow-xl hover:shadow-2xl ${
+                revealed ? "rotate-y-180" : ""
+              }`}
+            >
+              {/* Mặt trước */}
+              <div className="absolute inset-0 flex flex-col justify-between rounded-[30px] border border-slate-200/80 bg-white p-7 text-center backface-hidden sm:p-10">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-[.18em] text-[#6c63ff]">
+                  <span>Ôn theo lịch FSRS</span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <kbd>Space</kbd> để lật
+                  </span>
                 </div>
-                <WordMeta card={card} />
+                <div className="my-auto py-6">
+                  <div className="flex items-center justify-center gap-3">
+                    <h2 className="text-3xl font-black text-slate-900 sm:text-4xl">{card.front}</h2>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        speak(card);
+                      }}
+                      aria-label={`Phát âm ${card.front}`}
+                      className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                    >
+                      <Volume2 size={22} />
+                    </button>
+                  </div>
+                  <WordMeta card={card} />
+                </div>
+                <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+                  <span>Nhấp thẻ hoặc bấm</span>
+                  <kbd className="rounded border bg-slate-100 px-2 py-0.5 font-mono text-slate-700 shadow-2xs">Space</kbd>
+                  <span>để hiện đáp án</span>
+                </div>
+              </div>
+
+              {/* Mặt sau */}
+              <div className="absolute inset-0 flex flex-col justify-between rounded-[30px] border border-emerald-200 bg-gradient-to-b from-white via-white to-emerald-50/40 p-7 text-center backface-hidden rotate-y-180 sm:p-10">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-[.18em] text-[#17a673]">
+                  <span>Đáp án (Mặt sau)</span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <kbd>Space</kbd> lật lại
+                  </span>
+                </div>
+                <div className="my-auto py-6">
+                  <p className="text-3xl font-black text-[#17a673] sm:text-4xl">{card.back}</p>
+                  <WordMeta card={card} />
+                  {card.example && (
+                    <div className="mt-5 rounded-2xl bg-slate-50/80 p-3.5 border border-slate-100">
+                      <p className="text-sm italic text-slate-600">“{card.example}”</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-400">
+                  <span>Bấm phím số</span>
+                  <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">1</kbd>
+                  <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">2</kbd>
+                  <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">3</kbd>
+                  <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">4</kbd>
+                  <span>để đánh giá</span>
+                </div>
               </div>
             </div>
-            {revealed && (
-              <div className="border-t pt-6 text-center">
-                <p className="text-2xl font-black text-[#17a673]">{card.back}</p>
-                {card.example && <p className="mt-3 italic text-slate-500">“{card.example}”</p>}
+          </div>
+
+          <div className="mt-5">
+            {!revealed ? (
+              <div className="flex flex-col gap-2.5 sm:flex-row">
+                <Button
+                  onClick={() => setRevealed(true)}
+                  className="h-14 flex-1 rounded-2xl text-base font-black bg-[#6c63ff] hover:bg-[#5b52f5] shadow-md"
+                >
+                  Hiện đáp án <kbd className="ml-2 rounded bg-white/20 px-2 py-0.5 text-xs font-mono">Space</kbd>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
+                  <span>Đánh giá mức độ ghi nhớ:</span>
+                  <span>Phím tắt [1 - 4]</span>
+                </div>
+                <RatingButtons onRate={rate} disabled={busy} />
               </div>
             )}
           </div>
-          {!revealed ? (
-            <Button onClick={() => setRevealed(true)} className="mt-5 h-14 w-full rounded-2xl text-base font-black">Hiện đáp án</Button>
-          ) : (
-            <div className="mt-5"><RatingButtons onRate={rate} disabled={busy} /></div>
-          )}
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-2xl bg-white/70 border border-slate-200/60 py-2.5 px-4 text-xs font-semibold text-slate-500 shadow-2xs">
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">Space</kbd> Lật thẻ</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">1</kbd> Quên</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">2</kbd> Khó</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">3</kbd> Tốt</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">4</kbd> Dễ</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">R</kbd> Nghe</span>
+          </div>
         </>
       )}
     </div>
@@ -226,12 +365,74 @@ export function FlashcardsMode({ cards, title, onBack, onToggleDifficult, onRate
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft") previous();
-      if (event.key === "ArrowRight") next();
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable ||
+          target.tagName === "SELECT")
+      ) {
+        return;
+      }
+
+      if (event.code === "Space" || event.key === " ") {
+        event.preventDefault();
+        setFlipped((val) => !val);
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        previous();
+        return;
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        next();
+        return;
+      }
+      if (event.key.toLowerCase() === "r") {
+        if (card) {
+          event.preventDefault();
+          speak(card);
+        }
+        return;
+      }
+      if (event.key.toLowerCase() === "f") {
+        if (card) {
+          event.preventDefault();
+          onToggleDifficult(card);
+        }
+        return;
+      }
+
+      if (recordFsrs && card && !busy) {
+        if (event.key === "1") {
+          event.preventDefault();
+          rate("again");
+          return;
+        }
+        if (event.key === "2") {
+          event.preventDefault();
+          rate("hard");
+          return;
+        }
+        if (event.key === "3") {
+          event.preventDefault();
+          rate("good");
+          return;
+        }
+        if (event.key === "4") {
+          event.preventDefault();
+          rate("easy");
+          return;
+        }
+      }
     };
+
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  });
+  }, [card, recordFsrs, busy, ids.length, index, done]);
 
   const frontPrimary = direction === "en-vi";
   return (
@@ -269,31 +470,167 @@ export function FlashcardsMode({ cards, title, onBack, onToggleDifficult, onRate
             <Progress value={((index + 1) / ids.length) * 100} />
             <b className="whitespace-nowrap text-sm text-slate-500">{index + 1} / {ids.length}</b>
           </div>
-          <div className="flex min-h-[410px] w-full flex-col rounded-[30px] border bg-white p-7 text-center shadow-xl transition hover:shadow-2xl sm:p-10">
-            <button onClick={() => setFlipped((value) => !value)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} className="flex flex-1 flex-col text-center">
-              <span className="text-xs font-black uppercase tracking-[.18em] text-[#6c63ff]">{flipped ? "Mặt sau" : "Chạm để lật"}</span>
-              <span className="flex flex-1 items-center justify-center">
-                {!flipped ? (
-                  frontPrimary ? (
-                    <span><span className="block text-3xl font-black sm:text-4xl">{card.front}</span><WordMeta card={card} /></span>
-                  ) : <span className="text-2xl font-black sm:text-3xl">{card.back}</span>
-                ) : frontPrimary ? (
-                  <span><span className="block text-2xl font-black text-[#17a673] sm:text-3xl">{card.back}</span>{card.example && <span className="mt-4 block italic text-slate-500">“{card.example}”</span>}</span>
-                ) : (
-                  <span><span className="block text-3xl font-black sm:text-4xl">{card.front}</span><WordMeta card={card} />{card.example && <span className="mt-4 block italic text-slate-500">“{card.example}”</span>}</span>
-                )}
-              </span>
-            </button>
-            <div className="flex items-center justify-center gap-2">
-              <button onClick={() => speak(card)} className="rounded-full p-2 text-slate-400 hover:bg-slate-100" aria-label={`Phát âm ${card.front}`}><Volume2 /></button>
-              <button onClick={() => onToggleDifficult(card)} className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-black ${card.isDifficult ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}><Flag size={17} />{card.isDifficult ? "Đã đánh dấu Khó" : "Đánh dấu Khó"}</button>
+
+          {/* Quizlet 3D Flashcard container */}
+          <div
+            className="perspective-1000 w-full min-h-[420px] cursor-pointer select-none"
+            onClick={() => setFlipped((value) => !value)}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+            role="button"
+            tabIndex={0}
+            aria-label="Thẻ ghi nhớ. Bấm phím Space để lật thẻ."
+          >
+            <div
+              className={`relative min-h-[420px] w-full rounded-[30px] transition-transform duration-500 transform-style-3d shadow-xl hover:shadow-2xl ${
+                flipped ? "rotate-y-180" : ""
+              }`}
+            >
+              {/* Mặt trước */}
+              <div className="absolute inset-0 flex flex-col justify-between rounded-[30px] border border-slate-200/80 bg-white p-7 text-center backface-hidden sm:p-10">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-[.18em] text-[#6c63ff]">
+                  <span>{frontPrimary ? "Tiếng Anh" : "Tiếng Việt"}</span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <kbd>Space</kbd> để lật
+                  </span>
+                </div>
+                <div className="my-auto py-6">
+                  {frontPrimary ? (
+                    <div>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-3xl font-black text-slate-900 sm:text-4xl">{card.front}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speak(card);
+                          }}
+                          className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                          aria-label={`Phát âm ${card.front}`}
+                        >
+                          <Volume2 size={22} />
+                        </button>
+                      </div>
+                      <WordMeta card={card} />
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-3xl font-black text-slate-900 sm:text-4xl">{card.back}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleDifficult(card);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition ${
+                      card.isDifficult ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Flag size={14} />
+                    {card.isDifficult ? "Đã đánh dấu Khó" : "Đánh dấu Khó"}
+                    <kbd className="ml-1 text-[10px] font-mono opacity-60">[F]</kbd>
+                  </button>
+                  <span className="text-xs font-bold text-slate-400">
+                    Bấm <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600">Space</kbd> để lật
+                  </span>
+                </div>
+              </div>
+
+              {/* Mặt sau */}
+              <div className="absolute inset-0 flex flex-col justify-between rounded-[30px] border border-indigo-200 bg-gradient-to-b from-white via-white to-indigo-50/30 p-7 text-center backface-hidden rotate-y-180 sm:p-10">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-[.18em] text-[#6258ef]">
+                  <span>{frontPrimary ? "Tiếng Việt (Nghĩa)" : "Tiếng Anh"}</span>
+                  <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <kbd>Space</kbd> lật lại
+                  </span>
+                </div>
+                <div className="my-auto py-6">
+                  {frontPrimary ? (
+                    <div>
+                      <span className="block text-3xl font-black text-[#17a673] sm:text-4xl">{card.back}</span>
+                      {card.example && (
+                        <div className="mt-5 rounded-2xl bg-slate-50/80 p-3.5 border border-slate-100">
+                          <p className="text-sm italic text-slate-600">“{card.example}”</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-3xl font-black text-slate-900 sm:text-4xl">{card.front}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speak(card);
+                          }}
+                          className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                          aria-label={`Phát âm ${card.front}`}
+                        >
+                          <Volume2 size={22} />
+                        </button>
+                      </div>
+                      <WordMeta card={card} />
+                      {card.example && (
+                        <div className="mt-5 rounded-2xl bg-slate-50/80 p-3.5 border border-slate-100">
+                          <p className="text-sm italic text-slate-600">“{card.example}”</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleDifficult(card);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition ${
+                      card.isDifficult ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Flag size={14} />
+                    {card.isDifficult ? "Đã đánh dấu Khó" : "Đánh dấu Khó"}
+                    <kbd className="ml-1 text-[10px] font-mono opacity-60">[F]</kbd>
+                  </button>
+                  <span className="text-xs font-bold text-slate-400">
+                    Bấm <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600">Space</kbd> để lật lại
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          {recordFsrs && flipped && <div className="mt-4"><p className="mb-2 text-center text-xs font-bold text-amber-700">Lựa chọn dưới đây sẽ cập nhật lịch FSRS.</p><RatingButtons onRate={rate} disabled={busy} /></div>}
+
+          {recordFsrs && flipped && (
+            <div className="mt-4">
+              <p className="mb-2 text-center text-xs font-bold text-amber-700">Lựa chọn dưới đây sẽ cập nhật lịch FSRS (Phím tắt 1 - 4).</p>
+              <RatingButtons onRate={rate} disabled={busy} />
+            </div>
+          )}
+
           <div className="mt-4 grid grid-cols-3 gap-2">
-            <Button variant="outline" disabled={index === 0} onClick={previous}><ArrowLeft />Thẻ trước</Button>
-            <Button variant="outline" onClick={() => restart(true, onlyDifficult)}><Shuffle />Xáo trộn</Button>
-            <Button onClick={next}>Thẻ tiếp theo<ArrowRight /></Button>
+            <Button variant="outline" disabled={index === 0} onClick={previous} className="rounded-xl">
+              <ArrowLeft /> Thẻ trước <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">←</kbd>
+            </Button>
+            <Button variant="outline" onClick={() => restart(true, onlyDifficult)} className="rounded-xl">
+              <Shuffle /> Xáo trộn
+            </Button>
+            <Button onClick={next} className="rounded-xl">
+              Tiếp theo <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">→</kbd> <ArrowRight />
+            </Button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-2xl bg-white/70 border border-slate-200/60 py-2.5 px-4 text-xs font-semibold text-slate-500 shadow-2xs">
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">Space</kbd> Lật</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">←</kbd><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">→</kbd> Chuyển thẻ</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">R</kbd> Phát âm</span>
+            <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">F</kbd> Đánh dấu Khó</span>
+            {recordFsrs && <span className="flex items-center gap-1"><kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">1-4</kbd> Đánh giá</span>}
           </div>
         </>
       ) : null}
