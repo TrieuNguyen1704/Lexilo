@@ -594,7 +594,7 @@ export default function Home() {
   }
 
   const navigation = [
-    ["today", LayoutDashboard, "Hôm nay"],
+    ["today", LayoutDashboard, "Trang chủ"],
     ["scheduled", GraduationCap, "Ôn tập"],
     ["library", Library, "Bộ thẻ"],
     ["import", Sparkles, "Nhập nhanh"],
