@@ -9,9 +9,10 @@
     "install:ci": "bash scripts/install-ci.sh",
     "dev": "node server.mjs --dev",
     "local": "node server.mjs",
-    "build": "vinext build",
+    "build": "next build",
+    "build:vinext": "vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --test --test-concurrency=1 tests/rendered-html.test.mjs tests/ui-components.test.mjs tests/learning-domain.test.mjs",
+    "test": "npm run build:vinext && node --test --test-concurrency=1 tests/rendered-html.test.mjs tests/ui-components.test.mjs tests/learning-domain.test.mjs",
     "test:api": "node tests/api-integration.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
