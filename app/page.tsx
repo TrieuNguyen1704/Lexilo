@@ -672,8 +672,11 @@ export default function Home() {
               }`}
             >
               <Cloud size={16} className={cloudUser ? "text-emerald-500" : ""} />
-              <span>
+              <span className="hidden sm:inline">
                 {cloudUser ? cloudUser.email?.split("@")[0] : "Đồng bộ đám mây"}
+              </span>
+              <span className="sm:hidden">
+                {cloudUser ? "Đồng bộ" : "Đồng bộ"}
               </span>
             </Button>
             <Button
@@ -715,8 +718,8 @@ export default function Home() {
               </b>
               <p className="mt-1 text-xs leading-5 text-slate-300">
                 {cloudUser
-                  ? `Đã liên kết ${cloudUser.email}. Tự động đồng bộ giữa PC, iPhone & Tablet.`
-                  : "Dữ liệu được lưu cục bộ. Bật đồng bộ để tự động cập nhật qua điện thoại."}
+                  ? `Đã liên kết ${cloudUser.email}. Dữ liệu tự động đồng bộ giữa các thiết bị.`
+                  : "Dữ liệu được lưu cục bộ. Bật đồng bộ để kết nối giữa các thiết bị."}
               </p>
               <button
                 onClick={() => setSyncDialogOpen(true)}
