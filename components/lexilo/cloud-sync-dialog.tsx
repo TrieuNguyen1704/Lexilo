@@ -142,7 +142,13 @@ export function CloudSyncDialog({
         }
       }
     } catch (err: any) {
-      onNotice("error", err?.message || "Thao tác thất bại");
+      let msg = err?.message || "Thao tác thất bại";
+      if (msg.toLowerCase().includes("email not confirmed")) {
+        msg = "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư hoặc tắt 'Confirm Email' trong Supabase.";
+      } else if (msg.toLowerCase().includes("invalid login credentials")) {
+        msg = "Email hoặc mật khẩu không chính xác.";
+      }
+      onNotice("error", msg);
     } finally {
       setBusy(false);
     }
