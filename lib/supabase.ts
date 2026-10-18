@@ -5,6 +5,10 @@ const STORAGE_SUPABASE_URL_KEY = "lexilo_supabase_url";
 const STORAGE_SUPABASE_KEY_KEY = "lexilo_supabase_anon_key";
 const LAST_SYNCED_KEY = "lexilo_last_synced_at";
 
+function sanitizeUrl(raw: string): string {
+  return raw.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+}
+
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
   const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -13,24 +17,27 @@ export function getSupabaseCredentials(): { url: string; anonKey: string } {
     const customUrl = window.localStorage.getItem(STORAGE_SUPABASE_URL_KEY);
     const customKey = window.localStorage.getItem(STORAGE_SUPABASE_KEY_KEY);
     return {
-      url: customUrl || envUrl,
-      anonKey: customKey || envKey,
+      url: sanitizeUrl(customUrl || envUrl),
+      anonKey: (customKey || envKey).trim(),
     };
   }
 
-  return { url: envUrl, anonKey: envKey };
+  return { url: sanitizeUrl(envUrl), anonKey: envKey.trim() };
 }
 
 export function saveCustomSupabaseCredentials(url: string, anonKey: string) {
   if (typeof window !== "undefined") {
-    if (url.trim()) {
-      window.localStorage.setItem(STORAGE_SUPABASE_URL_KEY, url.trim());
+    const cleanedUrl = sanitizeUrl(url);
+    const cleanedKey = anonKey.trim();
+
+    if (cleanedUrl) {
+      window.localStorage.setItem(STORAGE_SUPABASE_URL_KEY, cleanedUrl);
     } else {
       window.localStorage.removeItem(STORAGE_SUPABASE_URL_KEY);
     }
 
-    if (anonKey.trim()) {
-      window.localStorage.setItem(STORAGE_SUPABASE_KEY_KEY, anonKey.trim());
+    if (cleanedKey) {
+      window.localStorage.setItem(STORAGE_SUPABASE_KEY_KEY, cleanedKey);
     } else {
       window.localStorage.removeItem(STORAGE_SUPABASE_KEY_KEY);
     }
@@ -46,7 +53,7 @@ export function getSupabase(): SupabaseClient | null {
   if (!url || !anonKey) return null;
 
   try {
-    cachedClient = createClient(url, anonKey, {
+    cachedClient = createClient(sanitizeUrl(url), anonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
