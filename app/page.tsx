@@ -17,6 +17,7 @@ import {
   LayoutDashboard,
   Layers3,
   Library,
+  Cloud,
   MoreVertical,
   Pencil,
   Plus,
@@ -38,6 +39,8 @@ import {
   DeckDialog,
   DeleteDeckDialog,
 } from "@/components/lexilo/deck-dialogs";
+import { CloudSyncDialog } from "@/components/lexilo/cloud-sync-dialog";
+import { getCurrentUser, pullStoreFromCloud, pushStoreToCloud } from "@/lib/supabase";
 import {
   FlashcardsMode,
   LearnMode,
@@ -132,7 +135,61 @@ export default function Home() {
   const [deletingDeck, setDeletingDeck] = useState<Deck | null>(null);
   const [deleteDeckBusy, setDeleteDeckBusy] = useState(false);
 
+  // Cloud Sync states
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [cloudUser, setCloudUser] = useState<{ email?: string; id?: string } | null>(null);
+
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+
+  // Helper to persist to LocalStorage and push to Cloud if logged in
+  function syncState(state: Store) {
+    setData(state);
+    saveLocalStore(state);
+    if (cloudUser) {
+      pushStoreToCloud(state).catch(() => {});
+    }
+  }
+
+  // Cloud Sync listener on mount and focus / visibility change
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkCloud() {
+      try {
+        const u = await getCurrentUser();
+        if (!isMounted) return;
+        setCloudUser(u ? { email: u.email, id: u.id } : null);
+        if (u) {
+          const { store: cloudStore } = await pullStoreFromCloud();
+          if (isMounted && cloudStore && Array.isArray(cloudStore.decks) && cloudStore.decks.length > 0) {
+            saveLocalStore(cloudStore);
+            setData(cloudStore);
+            if (cloudStore.decks.length > 0 && !cloudStore.decks.some((d) => d.id === selectedDeckId)) {
+              setSelectedDeckId(cloudStore.decks[0].id);
+            }
+          }
+        }
+      } catch {
+        // silent fallback
+      }
+    }
+
+    checkCloud();
+
+    const handleFocus = () => {
+      checkCloud();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") handleFocus();
+    });
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [selectedDeckId]);
 
   // PWA Service Worker Registration
   useEffect(() => {
@@ -235,8 +292,7 @@ export default function Home() {
         } catch {
           state = localUpdateDeck(deckDialogState.deck.id, deckData.name, deckData.color);
         }
-        setData(state);
-        saveLocalStore(state);
+        syncState(state);
         setDeckDialogState({ open: false });
         showNotice("success", `Đã cập nhật bộ thẻ "${deckData.name}".`);
       } else {
@@ -249,8 +305,7 @@ export default function Home() {
         } catch {
           state = localCreateDeck(deckData.name, deckData.color);
         }
-        setData(state);
-        saveLocalStore(state);
+        syncState(state);
         const created = state.decks.at(-1);
         if (created) setSelectedDeckId(created.id);
         setDeckDialogState({ open: false });
@@ -276,8 +331,7 @@ export default function Home() {
       } catch {
         state = localDeleteDeck(deletingDeck.id);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       setDeletingDeck(null);
       if (selectedDeckId === deletingDeck.id) {
         setSelectedDeckId(state.decks[0]?.id || "");
@@ -307,8 +361,7 @@ export default function Home() {
       } catch {
         state = localAddCards(addingCardToDeck.id, [draft]);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       if (!keepOpen) {
         setAddingCardToDeck(null);
       }
@@ -339,8 +392,7 @@ export default function Home() {
       } catch {
         state = localAddCards(selectedDeckId, cards);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       setBulk("");
       setAiPreview([]);
       setScreen("library");
@@ -399,8 +451,7 @@ export default function Home() {
       } catch {
         state = localUpdateCard(editing.id, draft);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       setEditing(null);
       showNotice("success", "Đã cập nhật thẻ.");
     } catch (error) {
@@ -420,8 +471,7 @@ export default function Home() {
       } catch {
         state = localDeleteCard(cardId);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       showNotice("success", "Đã xóa thẻ.");
     } catch (error) {
       showNotice("error", (error as Error).message);
@@ -441,8 +491,7 @@ export default function Home() {
       } catch {
         state = localToggleDifficult(card.id);
       }
-      setData(state);
-      saveLocalStore(state);
+      syncState(state);
       showNotice("success", card.isDifficult ? "Đã bỏ đánh dấu Khó." : "Đã đánh dấu thẻ Khó.");
     } catch (error) {
       showNotice("error", (error as Error).message);
@@ -458,11 +507,10 @@ export default function Home() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ cardId, rating }),
         });
-        setData(result.state);
-        saveLocalStore(result.state);
+        syncState(result.state);
       } catch {
         const result = localReviewCard(cardId, rating);
-        setData(result.state);
+        syncState(result.state);
       }
     } catch (error) {
       showNotice("error", (error as Error).message);
@@ -479,11 +527,10 @@ export default function Home() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ results }),
         });
-        setData(response.state);
-        saveLocalStore(response.state);
+        syncState(response.state);
       } catch {
         const res = localBatchReview(results);
-        setData(res.state);
+        syncState(res.state);
       }
       showNotice("success", "Đã ghi kết quả vào lịch FSRS.");
     } catch (error) {
@@ -537,8 +584,7 @@ export default function Home() {
         } catch {
           state = localRestore(backup);
         }
-        setData(state);
-        saveLocalStore(state);
+        syncState(state);
         showNotice("success", "Khôi phục dữ liệu thành công.");
       } catch (error) {
         showNotice("error", (error as Error).message || "File sao lưu không hợp lệ.");
@@ -617,6 +663,20 @@ export default function Home() {
               <Flame size={17} />{todayCount} lượt hôm nay
             </span>
             <Button
+              onClick={() => setSyncDialogOpen(true)}
+              variant="outline"
+              className={`rounded-xl gap-1.5 text-xs font-semibold h-9 ${
+                cloudUser
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "text-[#667085] hover:text-[#17233b]"
+              }`}
+            >
+              <Cloud size={16} className={cloudUser ? "text-emerald-500" : ""} />
+              <span>
+                {cloudUser ? cloudUser.email?.split("@")[0] : "Đồng bộ đám mây"}
+              </span>
+            </Button>
+            <Button
               onClick={() => setDeckDialogState({ open: true, deck: null })}
               variant="outline"
               className="rounded-xl hidden sm:inline-flex"
@@ -649,10 +709,21 @@ export default function Home() {
               </button>
             ))}
             <div className="mt-6 rounded-2xl bg-[#17233b] p-4 text-white shadow-sm">
-              <b className="text-sm">Dữ liệu riêng tư</b>
+              <b className="text-sm flex items-center gap-1.5">
+                <Cloud size={16} className={cloudUser ? "text-emerald-400" : "text-slate-400"} />
+                {cloudUser ? "Đang đồng bộ đám mây" : "Lưu trữ máy này"}
+              </b>
               <p className="mt-1 text-xs leading-5 text-slate-300">
-                Thẻ, lịch FSRS và đánh dấu Khó được lưu trong SQLite trên máy này.
+                {cloudUser
+                  ? `Đã liên kết ${cloudUser.email}. Tự động đồng bộ giữa PC, iPhone & Tablet.`
+                  : "Dữ liệu được lưu cục bộ. Bật đồng bộ để tự động cập nhật qua điện thoại."}
               </p>
+              <button
+                onClick={() => setSyncDialogOpen(true)}
+                className="mt-2.5 text-xs font-bold text-[#ff6b4a] hover:underline block"
+              >
+                {cloudUser ? "Quản lý đồng bộ →" : "Bật đồng bộ đám mây →"}
+              </button>
             </div>
           </nav>
         </aside>
@@ -719,6 +790,15 @@ export default function Home() {
           onConfirm={handleDeleteDeck}
         />
       )}
+
+      {/* Cloud Sync Dialog */}
+      <CloudSyncDialog
+        open={syncDialogOpen}
+        onOpenChange={setSyncDialogOpen}
+        currentStore={data}
+        onStoreUpdated={syncState}
+        onNotice={showNotice}
+      />
 
       {/* Notice Toast */}
       {notice && (
