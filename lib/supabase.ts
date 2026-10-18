@@ -9,9 +9,12 @@ function sanitizeUrl(raw: string): string {
   return raw.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
 }
 
+const DEFAULT_SUPABASE_URL = "https://wbvxedcmkzzgpacnyvpx.supabase.co";
+const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_k8qDG16TYsVCH7xnJhBZjw_OCxMLTUw";
+
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
-  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+  const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
   if (typeof window !== "undefined") {
     const customUrl = window.localStorage.getItem(STORAGE_SUPABASE_URL_KEY);
