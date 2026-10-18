@@ -57,6 +57,20 @@ import {
   Rating,
   Store,
 } from "@/lib/lexilo";
+import {
+  loadLocalStore,
+  saveLocalStore,
+  localCreateDeck,
+  localUpdateDeck,
+  localDeleteDeck,
+  localAddCards,
+  localUpdateCard,
+  localToggleDifficult,
+  localDeleteCard,
+  localReviewCard,
+  localBatchReview,
+  localRestore,
+} from "@/lib/storage";
 
 type Screen = "today" | "library" | "import" | "deck" | "scheduled" | "flashcards" | "learn" | "test" | "match";
 type ImportMode = "pairs" | "cloze" | "ai";
@@ -120,17 +134,46 @@ export default function Home() {
 
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
+  // PWA Service Worker Registration
   useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  }, []);
+
+  // Hybrid Data Initialization
+  useEffect(() => {
+    let isMounted = true;
     Promise.all([
       requestJson<Store>("/api/state"),
       requestJson<{ ollama: boolean }>("/api/health"),
-    ]).then(([state, health]) => {
-      setData(state);
-      setOllama(health.ollama);
-      if (state.decks.length > 0 && !state.decks.some((d) => d.id === selectedDeckId)) {
-        setSelectedDeckId(state.decks[0].id);
-      }
-    }).catch((error) => showNotice("error", error.message)).finally(() => setReady(true));
+    ])
+      .then(([state, health]) => {
+        if (!isMounted) return;
+        saveLocalStore(state);
+        setData(state);
+        setOllama(health.ollama);
+        if (state.decks.length > 0 && !state.decks.some((d) => d.id === selectedDeckId)) {
+          setSelectedDeckId(state.decks[0].id);
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        const local = loadLocalStore();
+        setData(local);
+        if (local.decks.length > 0 && !local.decks.some((d) => d.id === selectedDeckId)) {
+          setSelectedDeckId(local.decks[0].id);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setReady(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -176,29 +219,38 @@ export default function Home() {
     setScreen("scheduled");
   }
 
-  // DECK MANAGEMENT: CREATE
+  // DECK MANAGEMENT: CREATE & UPDATE (Hybrid)
   async function handleSaveDeck(deckData: { name: string; color: string }) {
     setDeckDialogBusy(true);
     setDeckDialogError("");
     try {
+      let state: Store;
       if (deckDialogState.deck) {
-        // UPDATE DECK
-        const state = await requestJson<Store>(`/api/decks/${deckDialogState.deck.id}`, {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(deckData),
-        });
+        try {
+          state = await requestJson<Store>(`/api/decks/${deckDialogState.deck.id}`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(deckData),
+          });
+        } catch {
+          state = localUpdateDeck(deckDialogState.deck.id, deckData.name, deckData.color);
+        }
         setData(state);
+        saveLocalStore(state);
         setDeckDialogState({ open: false });
         showNotice("success", `Đã cập nhật bộ thẻ "${deckData.name}".`);
       } else {
-        // CREATE DECK
-        const state = await requestJson<Store>("/api/decks", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(deckData),
-        });
+        try {
+          state = await requestJson<Store>("/api/decks", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(deckData),
+          });
+        } catch {
+          state = localCreateDeck(deckData.name, deckData.color);
+        }
         setData(state);
+        saveLocalStore(state);
         const created = state.decks.at(-1);
         if (created) setSelectedDeckId(created.id);
         setDeckDialogState({ open: false });
@@ -211,15 +263,21 @@ export default function Home() {
     }
   }
 
-  // DECK MANAGEMENT: DELETE
+  // DECK MANAGEMENT: DELETE (Hybrid)
   async function handleDeleteDeck() {
     if (!deletingDeck) return;
     setDeleteDeckBusy(true);
     try {
-      const state = await requestJson<Store>(`/api/decks/${deletingDeck.id}`, {
-        method: "DELETE",
-      });
+      let state: Store;
+      try {
+        state = await requestJson<Store>(`/api/decks/${deletingDeck.id}`, {
+          method: "DELETE",
+        });
+      } catch {
+        state = localDeleteDeck(deletingDeck.id);
+      }
       setData(state);
+      saveLocalStore(state);
       setDeletingDeck(null);
       if (selectedDeckId === deletingDeck.id) {
         setSelectedDeckId(state.decks[0]?.id || "");
@@ -233,18 +291,24 @@ export default function Home() {
     }
   }
 
-  // CARD MANAGEMENT: ADD SINGLE CARD
+  // CARD MANAGEMENT: ADD SINGLE CARD (Hybrid)
   async function handleAddSingleCard(draft: CardDraft, keepOpen = false): Promise<boolean> {
     if (!addingCardToDeck) return false;
     setAddCardBusy(true);
     setAddCardError("");
     try {
-      const state = await requestJson<Store>("/api/cards", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deckId: addingCardToDeck.id, cards: [draft] }),
-      });
+      let state: Store;
+      try {
+        state = await requestJson<Store>("/api/cards", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ deckId: addingCardToDeck.id, cards: [draft] }),
+        });
+      } catch {
+        state = localAddCards(addingCardToDeck.id, [draft]);
+      }
       setData(state);
+      saveLocalStore(state);
       if (!keepOpen) {
         setAddingCardToDeck(null);
       }
@@ -258,19 +322,25 @@ export default function Home() {
     }
   }
 
-  // CARD MANAGEMENT: BATCH SAVE
+  // CARD MANAGEMENT: BATCH SAVE (Hybrid)
   async function saveCards(cards: CardDraft[], message = "Đã lưu thẻ vào thư viện.") {
     if (!cards.length) {
       showNotice("error", "Chưa có thẻ hợp lệ để lưu.");
       return false;
     }
     try {
-      const state = await requestJson<Store>("/api/cards", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ deckId: selectedDeckId, cards }),
-      });
+      let state: Store;
+      try {
+        state = await requestJson<Store>("/api/cards", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ deckId: selectedDeckId, cards }),
+        });
+      } catch {
+        state = localAddCards(selectedDeckId, cards);
+      }
       setData(state);
+      saveLocalStore(state);
       setBulk("");
       setAiPreview([]);
       setScreen("library");
@@ -313,17 +383,24 @@ export default function Home() {
     setAiPreview((cards) => cards.map((card) => card.id === id ? { ...card, [field]: field === "partOfSpeech" ? normalizePartOfSpeech(value) : value } : card));
   }
 
+  // CARD MANAGEMENT: EDIT (Hybrid)
   async function saveEdit(draft: CardDraft) {
     if (!editing) return;
     setEditBusy(true);
     setEditError("");
     try {
-      const state = await requestJson<Store>(`/api/cards/${editing.id}`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(draft),
-      });
+      let state: Store;
+      try {
+        state = await requestJson<Store>(`/api/cards/${editing.id}`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(draft),
+        });
+      } catch {
+        state = localUpdateCard(editing.id, draft);
+      }
       setData(state);
+      saveLocalStore(state);
       setEditing(null);
       showNotice("success", "Đã cập nhật thẻ.");
     } catch (error) {
@@ -333,51 +410,81 @@ export default function Home() {
     }
   }
 
+  // CARD MANAGEMENT: DELETE (Hybrid)
   async function removeCard(cardId: string) {
     if (!window.confirm("Bạn muốn xóa thẻ này?")) return;
     try {
-      setData(await requestJson<Store>(`/api/cards/${cardId}`, { method: "DELETE" }));
+      let state: Store;
+      try {
+        state = await requestJson<Store>(`/api/cards/${cardId}`, { method: "DELETE" });
+      } catch {
+        state = localDeleteCard(cardId);
+      }
+      setData(state);
+      saveLocalStore(state);
       showNotice("success", "Đã xóa thẻ.");
     } catch (error) {
       showNotice("error", (error as Error).message);
     }
   }
 
+  // CARD MANAGEMENT: TOGGLE DIFFICULT (Hybrid)
   async function toggleDifficult(card: Card) {
     try {
-      setData(await requestJson<Store>(`/api/cards/${card.id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ isDifficult: !card.isDifficult }),
-      }));
+      let state: Store;
+      try {
+        state = await requestJson<Store>(`/api/cards/${card.id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ isDifficult: !card.isDifficult }),
+        });
+      } catch {
+        state = localToggleDifficult(card.id);
+      }
+      setData(state);
+      saveLocalStore(state);
       showNotice("success", card.isDifficult ? "Đã bỏ đánh dấu Khó." : "Đã đánh dấu thẻ Khó.");
     } catch (error) {
       showNotice("error", (error as Error).message);
     }
   }
 
+  // FSRS REVIEW (Hybrid)
   async function reviewCard(cardId: string, rating: Rating) {
     try {
-      const result = await requestJson<{ state: Store }>("/api/review", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cardId, rating }),
-      });
-      setData(result.state);
+      try {
+        const result = await requestJson<{ state: Store }>("/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ cardId, rating }),
+        });
+        setData(result.state);
+        saveLocalStore(result.state);
+      } catch {
+        const result = localReviewCard(cardId, rating);
+        setData(result.state);
+      }
     } catch (error) {
       showNotice("error", (error as Error).message);
       throw error;
     }
   }
 
+  // BATCH REVIEW (Hybrid)
   async function batchReview(results: { cardId: string; rating: Rating }[]) {
     try {
-      const response = await requestJson<{ state: Store }>("/api/reviews/batch", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ results }),
-      });
-      setData(response.state);
+      try {
+        const response = await requestJson<{ state: Store }>("/api/reviews/batch", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ results }),
+        });
+        setData(response.state);
+        saveLocalStore(response.state);
+      } catch {
+        const res = localBatchReview(results);
+        setData(res.state);
+      }
       showNotice("success", "Đã ghi kết quả vào lịch FSRS.");
     } catch (error) {
       showNotice("error", (error as Error).message);
@@ -396,7 +503,18 @@ export default function Home() {
 
   async function downloadBackup() {
     try {
-      const backup = await requestJson<unknown>("/api/backup");
+      let backup: unknown;
+      try {
+        backup = await requestJson<unknown>("/api/backup");
+      } catch {
+        backup = {
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          decks: data.decks,
+          cards: data.cards,
+          reviews: data.reviews,
+        };
+      }
       download(JSON.stringify(backup, null, 2), "lexilo-backup.json", "application/json");
       showNotice("success", "Đã tạo bản sao lưu đầy đủ.");
     } catch (error) {
@@ -409,11 +527,18 @@ export default function Home() {
     reader.onload = async () => {
       try {
         const backup = JSON.parse(String(reader.result));
-        setData(await requestJson<Store>("/api/restore", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(backup),
-        }));
+        let state: Store;
+        try {
+          state = await requestJson<Store>("/api/restore", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(backup),
+          });
+        } catch {
+          state = localRestore(backup);
+        }
+        setData(state);
+        saveLocalStore(state);
         showNotice("success", "Khôi phục dữ liệu thành công.");
       } catch (error) {
         showNotice("error", (error as Error).message || "File sao lưu không hợp lệ.");
