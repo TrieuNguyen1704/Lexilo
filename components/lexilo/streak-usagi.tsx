@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Flame, Sparkles, Trophy, Calendar, CheckCircle2 } from "lucide-react";
+import { Flame, Sparkles, Calendar } from "lucide-react";
 import { Review } from "@/lib/lexilo";
 
 interface StreakUsagiProps {
@@ -36,7 +36,6 @@ export function calculateStreak(reviews: Review[]): { currentStreak: number; bes
   } else if (uniqueDates.includes(yesterdayStr)) {
     checkDate = yesterday;
   } else {
-    // Streak broken
     return { currentStreak: 0, bestStreak: calculateBestStreak(uniqueDates) };
   }
 
@@ -74,174 +73,36 @@ function calculateBestStreak(sortedDescDates: string[]): number {
   return max;
 }
 
-// SVG Character of Usagi (The energetic yellow rabbit mascot)
+// Authentic Usagi Mascot Component using user's official artwork
 function UsagiMascot({ mood }: { mood: "cheering" | "happy" | "waiting" }) {
+  const isCheering = mood === "cheering";
+  const imageSrc = isCheering ? "/usagi-cheer.png" : "/usagi-jump.png";
+
   return (
-    <div className="relative flex items-center justify-center select-none">
-      <svg
-        viewBox="0 0 160 170"
-        className="w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md transition-transform duration-300 hover:scale-105"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+    <div className="relative flex items-center justify-center select-none group">
+      {/* Dynamic ambient halo glow */}
+      <div
+        className={`absolute -inset-2 rounded-full blur-xl transition-opacity duration-500 pointer-events-none ${
+          isCheering
+            ? "bg-amber-300/70 dark:bg-amber-500/30 opacity-90 animate-pulse"
+            : "bg-orange-200/50 dark:bg-orange-500/20 opacity-70"
+        }`}
+      />
+
+      {/* Usagi Authentic Character */}
+      <div
+        className={`relative transition-transform duration-300 group-hover:scale-110 cursor-pointer ${
+          isCheering ? "animate-bounce" : "hover:-translate-y-1"
+        }`}
       >
-        {/* Glow behind Usagi */}
-        <circle cx="80" cy="95" r="50" fill={mood === "cheering" ? "#ffeb99" : "#fff8e1"} opacity="0.6" />
-
-        {/* Ears */}
-        {/* Left Ear */}
-        <g className={mood === "cheering" ? "animate-bounce" : ""}>
-          <path
-            d="M58 52 C52 20 40 10 46 8 C54 6 68 28 67 50 Z"
-            fill="#FFE875"
-            stroke="#2B2015"
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M54 44 C50 24 44 17 48 16 C53 15 62 28 62 43 Z"
-            fill="#FFB6C1"
-          />
-        </g>
-
-        {/* Right Ear */}
-        <g className={mood === "cheering" ? "animate-bounce" : ""}>
-          <path
-            d="M102 52 C108 20 120 10 114 8 C106 6 92 28 93 50 Z"
-            fill="#FFE875"
-            stroke="#2B2015"
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M106 44 C110 24 116 17 112 16 C107 15 98 28 98 43 Z"
-            fill="#FFB6C1"
-          />
-        </g>
-
-        {/* Tail */}
-        <ellipse cx="80" cy="142" rx="10" ry="8" fill="#FFF3B0" stroke="#2B2015" strokeWidth="3" />
-
-        {/* Body */}
-        <path
-          d="M80 50 C44 50 36 78 36 102 C36 128 54 146 80 146 C106 146 124 128 124 102 C124 78 116 50 80 50 Z"
-          fill="#FFE875"
-          stroke="#2B2015"
-          strokeWidth="3.5"
-          strokeLinejoin="round"
+        <img
+          src={imageSrc}
+          alt={isCheering ? "Usagi Thumbs Up Cổ Vũ" : "Usagi Nhảy Múa"}
+          className={`object-contain drop-shadow-md select-none pointer-events-none ${
+            isCheering ? "w-28 h-28 sm:w-32 sm:h-32" : "w-24 h-24 sm:w-28 sm:h-28"
+          }`}
         />
-
-        {/* White Tummy patch */}
-        <ellipse cx="80" cy="112" rx="26" ry="22" fill="#FFF8D6" />
-
-        {/* Little Feet */}
-        <ellipse cx="60" cy="144" rx="10" ry="7" fill="#FFE875" stroke="#2B2015" strokeWidth="3" />
-        <ellipse cx="100" cy="144" rx="10" ry="7" fill="#FFE875" stroke="#2B2015" strokeWidth="3" />
-
-        {/* Rosy Cheeks */}
-        <circle cx="53" cy="98" r="7.5" fill="#FF8DA1" opacity="0.85" />
-        <circle cx="107" cy="98" r="7.5" fill="#FF8DA1" opacity="0.85" />
-
-        {/* Eyes & Eyebrows */}
-        {mood === "cheering" ? (
-          <>
-            {/* Happy Curved Eyes (^_^) */}
-            <path
-              d="M58 87 Q65 79 72 87"
-              stroke="#2B2015"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <path
-              d="M88 87 Q95 79 102 87"
-              stroke="#2B2015"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-            />
-            {/* Joyful Eyebrows */}
-            <path d="M59 75 Q65 72 71 75" stroke="#2B2015" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M89 75 Q95 72 101 75" stroke="#2B2015" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          </>
-        ) : (
-          <>
-            {/* Big Round Curious Eyes */}
-            <circle cx="65" cy="85" r="5" fill="#2B2015" />
-            <circle cx="63.5" cy="83.5" r="1.8" fill="white" />
-            <circle cx="95" cy="85" r="5" fill="#2B2015" />
-            <circle cx="93.5" cy="83.5" r="1.8" fill="white" />
-            {/* Cute slanted eyebrows */}
-            <path d="M60 76 Q65 73 70 77" stroke="#2B2015" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M90 77 Q95 73 100 76" stroke="#2B2015" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          </>
-        )}
-
-        {/* Cute Usagi Mouth */}
-        {mood === "cheering" ? (
-          /* Wide Open Happy Mouth: "YAHA!" */
-          <path
-            d="M74 95 Q80 94 86 95 C88 106 72 106 74 95 Z"
-            fill="#E2435A"
-            stroke="#2B2015"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
-        ) : mood === "happy" ? (
-          /* Small cheerful smile :3 */
-          <path
-            d="M74 96 Q77 99 80 96 Q83 99 86 96"
-            stroke="#2B2015"
-            strokeWidth="3"
-            strokeLinecap="round"
-            fill="none"
-          />
-        ) : (
-          /* Little curious dot mouth */
-          <ellipse cx="80" cy="96" rx="2.5" ry="3" fill="#2B2015" />
-        )}
-
-        {/* Arms */}
-        {mood === "cheering" ? (
-          <>
-            {/* Arms raised up celebrating! */}
-            <path
-              d="M40 92 C30 80 26 66 36 60 C42 56 48 76 46 90"
-              fill="#FFE875"
-              stroke="#2B2015"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M120 92 C130 80 134 66 124 60 C118 56 112 76 114 90"
-              fill="#FFE875"
-              stroke="#2B2015"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
-            />
-            {/* Celebration sparkles around paws */}
-            <path d="M25 50 L28 44 L34 46 L29 51 L31 57 L25 53 L19 56 L22 50 L18 45 L24 44 Z" fill="#FFA500" />
-            <path d="M135 50 L138 44 L144 46 L139 51 L141 57 L135 53 L129 56 L132 50 L128 45 L134 44 Z" fill="#FFA500" />
-          </>
-        ) : (
-          <>
-            {/* Relaxed cute paws resting on tummy */}
-            <path
-              d="M40 98 C46 104 56 108 62 104 C64 100 56 94 48 94 Z"
-              fill="#FFE875"
-              stroke="#2B2015"
-              strokeWidth="3"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M120 98 C114 104 104 108 98 104 C96 100 104 94 112 94 Z"
-              fill="#FFE875"
-              stroke="#2B2015"
-              strokeWidth="3"
-              strokeLinejoin="round"
-            />
-          </>
-        )}
-      </svg>
+      </div>
     </div>
   );
 }
@@ -251,18 +112,18 @@ export function StreakUsagi({ reviews, todayCount, dueCount, week }: StreakUsagi
 
   // Usagi's current mood and dialogue
   const { mood, speech, subtext } = useMemo(() => {
-    if (todayCount >= 10) {
+    if (todayCount >= 5) {
       return {
         mood: "cheering" as const,
         speech: "YAHA! 🔥 Tuyệt đỉnh hôm nay!",
-        subtext: `Bạn đã ôn tập ${todayCount} lượt thẻ rồi! Chuỗi ${currentStreak} ngày rực rỡ, Usagi tự hào về bạn! ✨`,
+        subtext: `Bạn đã ôn tập ${todayCount} lượt thẻ rồi! Chuỗi ${currentStreak} ngày rực rỡ, Usagi cho bạn điểm 10! ✨`,
       };
     }
     if (todayCount > 0) {
       return {
-        mood: "happy" as const,
-        speech: "Ura ura! Giữ chuỗi thành công! 🌟",
-        subtext: `Hôm nay bạn đã ôn ${todayCount} thẻ. ${dueCount > 0 ? `Còn ${dueCount} thẻ nữa là hoàn tất mục tiêu!` : "Hết thẻ đến hạn rồi, quá đỉnh!"}`,
+        mood: "cheering" as const,
+        speech: "Ura! Giữ chuỗi thành công! 🌟",
+        subtext: `Hôm nay bạn đã ôn ${todayCount} thẻ. ${dueCount > 0 ? `Còn ${dueCount} thẻ nữa là hoàn tất mục tiêu!` : "Hết thẻ đến hạn rồi, quá xuất sắc!"}`,
       };
     }
     if (currentStreak > 0) {
@@ -275,7 +136,7 @@ export function StreakUsagi({ reviews, todayCount, dueCount, week }: StreakUsagi
     return {
       mood: "waiting" as const,
       speech: "Yaha! Bắt đầu chuỗi ngày mới nào! 🚀",
-      subtext: `Bạn đang có ${dueCount} thẻ cần ôn. Bắt đầu ngay hôm nay để thắp sáng chuỗi lửa 1 ngày nhé!`,
+      subtext: `Bạn đang có ${dueCount} thẻ cần ôn. Bắt đầu ngay hôm nay để cùng Usagi thắp sáng chuỗi lửa 1 ngày nhé!`,
     };
   }, [todayCount, dueCount, currentStreak]);
 
@@ -309,12 +170,12 @@ export function StreakUsagi({ reviews, todayCount, dueCount, week }: StreakUsagi
         <div className="flex items-center gap-2 bg-white/90 dark:bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-orange-100 dark:border-slate-700 shadow-xs">
           <Calendar className="w-4 h-4 text-[#ff5e3a]" />
           <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
-            Hôm nay: <span className="text-[#ff5e3a]">{todayCount}</span> lượt ôn
+            Hôm nay: <span className="text-[#ff5e3a] font-black">{todayCount}</span> lượt ôn
           </span>
         </div>
       </div>
 
-      {/* Middle Section: Usagi Mascot & Speech Bubble */}
+      {/* Middle Section: Authentic Usagi Mascot & Speech Bubble */}
       <div className="my-4 flex flex-col sm:flex-row items-center gap-4 bg-gradient-to-r from-amber-50/70 via-orange-50/50 to-pink-50/40 dark:from-slate-800/50 dark:to-slate-800/30 p-3.5 sm:p-4 rounded-2xl border border-amber-200/50 dark:border-slate-700/60">
         <div className="shrink-0">
           <UsagiMascot mood={mood} />
