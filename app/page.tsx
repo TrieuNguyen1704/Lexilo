@@ -18,6 +18,7 @@ import {
   Layers3,
   Library,
   Cloud,
+  Bell,
   MoreVertical,
   Pencil,
   Plus,
@@ -40,6 +41,8 @@ import {
   DeleteDeckDialog,
 } from "@/components/lexilo/deck-dialogs";
 import { CloudSyncDialog } from "@/components/lexilo/cloud-sync-dialog";
+import { NotificationDialog } from "@/components/lexilo/notification-dialog";
+import { checkAndTriggerDueNotification, updateAppBadge } from "@/lib/notifications";
 import { getCurrentUser, pullStoreFromCloud, pushStoreToCloud } from "@/lib/supabase";
 import {
   FlashcardsMode,
@@ -137,6 +140,7 @@ export default function Home() {
 
   // Cloud Sync states
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [notifDialogOpen, setNotifDialogOpen] = useState(false);
   const [cloudUser, setCloudUser] = useState<{ email?: string; id?: string } | null>(null);
 
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -240,6 +244,13 @@ export default function Home() {
   }, [notice]);
 
   const due = useMemo(() => data.cards.filter((card) => card.due <= Date.now()), [data.cards]);
+
+  // Automatic notification check and app badge update
+  useEffect(() => {
+    if (ready) {
+      checkAndTriggerDueNotification(due.length);
+    }
+  }, [ready, due.length]);
   const selectedDeck = data.decks.find((deck) => deck.id === selectedDeckId) || data.decks[0];
   const deckCards = useMemo(() => data.cards.filter((card) => card.deckId === selectedDeck?.id), [data.cards, selectedDeck?.id]);
   const deckDue = useMemo(() => deckCards.filter((card) => card.due <= Date.now()), [deckCards]);
@@ -680,6 +691,14 @@ export default function Home() {
               </span>
             </Button>
             <Button
+              onClick={() => setNotifDialogOpen(true)}
+              variant="outline"
+              className="rounded-xl h-9 w-9 p-0 text-[#667085] hover:text-[#17233b] shrink-0"
+              title="Cài đặt thông báo"
+            >
+              <Bell size={16} />
+            </Button>
+            <Button
               onClick={() => setDeckDialogState({ open: true, deck: null })}
               variant="outline"
               className="rounded-xl hidden sm:inline-flex"
@@ -800,6 +819,14 @@ export default function Home() {
         onOpenChange={setSyncDialogOpen}
         currentStore={data}
         onStoreUpdated={syncState}
+        onNotice={showNotice}
+      />
+
+      {/* Notification Dialog */}
+      <NotificationDialog
+        open={notifDialogOpen}
+        onOpenChange={setNotifDialogOpen}
+        dueCount={due.length}
         onNotice={showNotice}
       />
 
