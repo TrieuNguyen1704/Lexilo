@@ -42,7 +42,7 @@ import {
 } from "@/components/lexilo/deck-dialogs";
 import { CloudSyncDialog } from "@/components/lexilo/cloud-sync-dialog";
 import { NotificationDialog } from "@/components/lexilo/notification-dialog";
-import { checkAndTriggerDueNotification, updateAppBadge } from "@/lib/notifications";
+import { checkAllNotifications } from "@/lib/notifications";
 import { getCurrentUser, pullStoreFromCloud, pushStoreToCloud } from "@/lib/supabase";
 import {
   FlashcardsMode,
@@ -245,12 +245,15 @@ export default function Home() {
 
   const due = useMemo(() => data.cards.filter((card) => card.due <= Date.now()), [data.cards]);
 
-  // Automatic notification check and app badge update
+  // Check real-time and scheduled notifications on ready, card changes, and every 30 seconds
   useEffect(() => {
-    if (ready) {
-      checkAndTriggerDueNotification(due.length);
-    }
-  }, [ready, due.length]);
+    if (!ready) return;
+    checkAllNotifications(data.cards);
+    const interval = setInterval(() => {
+      checkAllNotifications(data.cards);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [ready, data.cards]);
   const selectedDeck = data.decks.find((deck) => deck.id === selectedDeckId) || data.decks[0];
   const deckCards = useMemo(() => data.cards.filter((card) => card.deckId === selectedDeck?.id), [data.cards, selectedDeck?.id]);
   const deckDue = useMemo(() => deckCards.filter((card) => card.due <= Date.now()), [deckCards]);

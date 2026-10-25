@@ -5,12 +5,11 @@ import {
   Bell,
   BellCheck,
   BellOff,
-  Check,
   Clock,
-  ExternalLink,
   Send,
   Smartphone,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,16 +19,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
+  getCustomReminderTime,
   getNotificationPermission,
-  getReminderTime,
+  isDailyReminderEnabled,
   isNotificationSupported,
   isNotificationsEnabled,
+  isRealtimeNotifEnabled,
   NotificationStatus,
   requestNotificationPermission,
   sendNotification,
+  setCustomReminderTime,
+  setDailyReminderEnabled,
   setNotificationsEnabled,
-  setReminderTime,
+  setRealtimeNotifEnabled,
 } from "@/lib/notifications";
 
 interface NotificationDialogProps {
@@ -39,14 +43,7 @@ interface NotificationDialogProps {
   onNotice: (kind: "success" | "error", text: string) => void;
 }
 
-const REMINDER_OPTIONS = [
-  { value: "08:00", label: "08:00 Sáng (Bắt đầu ngày mới)" },
-  { value: "09:00", label: "09:00 Sáng" },
-  { value: "12:00", label: "12:00 Trưa (Nghỉ trưa)" },
-  { value: "18:00", label: "18:00 Chiều (Tan làm/học)" },
-  { value: "20:00", label: "20:00 Tối (Thời gian học tốt nhất)" },
-  { value: "21:30", label: "21:30 Tối (Trước khi ngủ)" },
-];
+const POPULAR_TIMES = ["07:30", "09:00", "12:30", "18:00", "20:00", "21:30"];
 
 export function NotificationDialog({
   open,
@@ -56,8 +53,9 @@ export function NotificationDialog({
 }: NotificationDialogProps) {
   const [status, setStatus] = useState<NotificationStatus>("default");
   const [enabled, setEnabled] = useState(false);
-  const [selectedTime, setSelectedTime] = useState("09:00");
-  const [isStandalone, setIsStandalone] = useState(false);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
+  const [dailyEnabled, setDailyEnabled] = useState(true);
+  const [customTime, setCustomTime] = useState("20:00");
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
@@ -65,14 +63,9 @@ export function NotificationDialog({
 
     setStatus(getNotificationPermission());
     setEnabled(isNotificationsEnabled());
-    setSelectedTime(getReminderTime());
-
-    // Check if running as iOS Home Screen PWA
-    const standalone =
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true);
-    setIsStandalone(Boolean(standalone));
+    setRealtimeEnabled(isRealtimeNotifEnabled());
+    setDailyEnabled(isDailyReminderEnabled());
+    setCustomTime(getCustomReminderTime());
   }, [open]);
 
   async function handleRequestPermission() {
@@ -87,7 +80,7 @@ export function NotificationDialog({
       if (newStatus === "denied") {
         onNotice(
           "error",
-          "Quyền thông báo đang bị từ chối. Hãy mở Cài đặt iPhone -> Thông báo -> Lexilo để bật."
+          "Quyền thông báo đang bị từ chối. Mở Cài đặt iPhone -> Thông báo -> Lexilo để bật."
         );
       } else {
         onNotice("error", "Chưa cấp quyền thông báo.");
@@ -95,15 +88,46 @@ export function NotificationDialog({
     }
   }
 
+  function handleToggleRealtime() {
+    const nextVal = !realtimeEnabled;
+    setRealtimeEnabled(nextVal);
+    setRealtimeNotifEnabled(nextVal);
+    onNotice(
+      "success",
+      nextVal
+        ? "Đã bật: Nhận thông báo tức thì khi có thẻ đến hạn."
+        : "Đã tắt thông báo tức thì."
+    );
+  }
+
+  function handleToggleDaily() {
+    const nextVal = !dailyEnabled;
+    setDailyEnabled(nextVal);
+    setDailyReminderEnabled(nextVal);
+    onNotice(
+      "success",
+      nextVal
+        ? `Đã bật nhắc nhở mỗi ngày vào ${customTime}.`
+        : "Đã tắt nhắc nhở định kỳ."
+    );
+  }
+
+  function handleTimeChange(val: string) {
+    if (!val) return;
+    setCustomTime(val);
+    setCustomReminderTime(val);
+    onNotice("success", `Đã lưu giờ nhắc nhở mỗi ngày: ${val}`);
+  }
+
   async function handleTestNotification() {
     setTesting(true);
     try {
       const sent = await sendNotification(
         "Kiểm tra thông báo Lexilo! 🔔",
-        `Hệ thống hoạt động tốt. Hiện bạn đang có ${dueCount} thẻ từ vựng cần ôn.`
+        `Hệ thống hoạt động tốt. Hiện bạn có ${dueCount} thẻ cần ôn tập.`
       );
       if (sent) {
-        onNotice("success", "Đã gửi thông báo thử nghiệm! Kiểm tra màn hình khóa hoặc thanh thông báo.");
+        onNotice("success", "Đã gửi thông báo thử! Kiểm tra màn hình khóa hoặc thanh thông báo.");
       } else {
         onNotice("error", "Không thể gửi thông báo. Hãy kiểm tra cài đặt thông báo của thiết bị.");
       }
@@ -112,12 +136,6 @@ export function NotificationDialog({
     } finally {
       setTesting(false);
     }
-  }
-
-  function handleTimeChange(timeStr: string) {
-    setSelectedTime(timeStr);
-    setReminderTime(timeStr);
-    onNotice("success", `Đã đặt giờ nhắc nhở mỗi ngày vào ${timeStr}.`);
   }
 
   return (
@@ -130,34 +148,31 @@ export function NotificationDialog({
             </div>
             <div>
               <DialogTitle className="text-base sm:text-lg font-bold">
-                Thông báo nhắc ôn tập
+                Cài đặt thông báo ôn tập
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Nhắc nhở khi có từ vựng đến hạn ôn tập FSRS
+                Tùy chỉnh thông báo tức thì và nhắc nhở theo giờ bạn muốn
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
-          {/* Status Badge */}
+          {/* Permission Status Banner */}
           {status === "granted" && enabled ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 sm:p-3.5 dark:border-emerald-900/40 dark:bg-emerald-950/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <p className="text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-200">
-                    Đã bật thông báo trên thiết bị này
+                    Đã cấp quyền thông báo
                   </p>
                 </div>
                 <BellCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               </div>
-              <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1">
-                Lexilo sẽ tự động gửi thông báo ra màn hình khóa khi có từ vựng cần ôn tập.
-              </p>
             </div>
           ) : status === "denied" ? (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 sm:p-3.5 dark:border-rose-900/40 dark:bg-rose-950/20">
+            <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
               <div className="flex items-center gap-2">
                 <BellOff className="w-4 h-4 text-rose-600 shrink-0" />
                 <p className="text-xs font-bold text-rose-950 dark:text-rose-200">
@@ -165,27 +180,10 @@ export function NotificationDialog({
                 </p>
               </div>
               <p className="text-[11px] text-rose-700 dark:text-rose-400 mt-1">
-                Để nhận thông báo trên iPhone: Mở <strong>Cài đặt iPhone</strong> →{" "}
-                <strong>Thông báo</strong> → chọn <strong>Lexilo</strong> → bật{" "}
-                <strong>Cho phép thông báo</strong>.
+                Vào <strong>Cài đặt iPhone</strong> → <strong>Thông báo</strong> → <strong>Lexilo</strong> → bật <strong>Cho phép thông báo</strong>.
               </p>
             </div>
           ) : (
-            <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 sm:p-3.5 dark:border-blue-900/40 dark:bg-blue-950/20">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
-                <p className="text-xs font-bold text-blue-950 dark:text-blue-200">
-                  Chưa bật thông báo
-                </p>
-              </div>
-              <p className="text-[11px] text-blue-700 dark:text-blue-400 mt-1">
-                Bật thông báo để không bao giờ bỏ lỡ chuỗi ngày ôn tập và ghi nhớ từ vựng lâu dài.
-              </p>
-            </div>
-          )}
-
-          {/* Action button if not granted */}
-          {status !== "granted" && (
             <Button
               onClick={handleRequestPermission}
               className="w-full bg-[#ff6b4a] hover:bg-[#e85a39] text-white font-bold text-xs sm:text-sm h-11 rounded-xl gap-2 shadow-sm"
@@ -194,57 +192,140 @@ export function NotificationDialog({
             </Button>
           )}
 
-          {/* Reminder Time Selection */}
-          <div className="space-y-2 pt-1">
-            <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-              Khung giờ nhắc nhở mỗi ngày
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {REMINDER_OPTIONS.map((opt) => {
-                const isSelected = selectedTime === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleTimeChange(opt.value)}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-medium transition text-left ${
-                      isSelected
-                        ? "border-[#ff6b4a] bg-orange-50/70 text-[#ff6b4a] dark:bg-orange-950/30 font-bold"
-                        : "border-border bg-card text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    <span>{opt.label}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-[#ff6b4a] shrink-0" />}
-                  </button>
-                );
-              })}
+          {/* ================= LUỒNG 1: THÔNG BÁO TỨC THÌ KHI CÓ THẺ ĐẾN HẠN ================= */}
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-100 text-[#ff6b4a] flex items-center justify-center font-bold">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-foreground">
+                    1. Thông báo tức thì khi có thẻ đến hạn
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Bắn thông báo ngay khi có thẻ vừa đến hạn FSRS
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={realtimeEnabled}
+                onClick={handleToggleRealtime}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  realtimeEnabled ? "bg-[#ff6b4a]" : "bg-slate-300 dark:bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    realtimeEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
+            <p className="text-[11px] text-muted-foreground pl-9">
+              {realtimeEnabled
+                ? "🟢 Đang bật: Cứ khi nào có từ vựng đến hạn học lại là điện thoại sẽ báo ngay."
+                : "⚪ Đang tắt: Sẽ không báo đột xuất trong ngày."}
+            </p>
           </div>
 
-          {/* Test Notification Button (When Granted) */}
-          {status === "granted" && (
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                onClick={handleTestNotification}
-                disabled={testing}
-                className="w-full text-xs h-10 rounded-xl gap-2"
+          {/* ================= LUỒNG 2: NHẮC NHỞ ĐỊNH KỲ THEO GIỜ TỰ CHỌN ================= */}
+          <div className="rounded-xl border border-border bg-card p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-foreground">
+                    2. Nhắc nhở cố định mỗi ngày
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tự đặt giờ cố định để nhắc tổng hợp thẻ cần học
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={dailyEnabled}
+                onClick={handleToggleDaily}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  dailyEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
+                }`}
               >
-                <Send className="w-3.5 h-3.5 text-[#ff6b4a]" />
-                {testing ? "Đang gửi..." : "Gửi thử 1 thông báo để kiểm tra chuông"}
-              </Button>
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    dailyEnabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
+
+            {dailyEnabled && (
+              <div className="pt-1 pl-9 space-y-2.5">
+                <div>
+                  <label className="text-xs font-semibold text-foreground block mb-1">
+                    Nhập hoặc chọn giờ bạn muốn nhắc:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="time"
+                      value={customTime}
+                      onChange={(e) => handleTimeChange(e.target.value)}
+                      className="text-sm font-bold h-10 w-36 rounded-xl border-[#6c63ff]/30 text-center"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      (Hàng ngày lúc <strong>{customTime}</strong>)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick preset chips */}
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground">Chọn nhanh mốc giờ phổ biến:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {POPULAR_TIMES.map((timeStr) => (
+                      <button
+                        key={timeStr}
+                        type="button"
+                        onClick={() => handleTimeChange(timeStr)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                          customTime === timeStr
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-muted/40 text-foreground border-border hover:bg-muted"
+                        }`}
+                      >
+                        {timeStr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Test Notification Button */}
+          {status === "granted" && (
+            <Button
+              variant="outline"
+              onClick={handleTestNotification}
+              disabled={testing}
+              className="w-full text-xs h-10 rounded-xl gap-2 mt-1"
+            >
+              <Send className="w-3.5 h-3.5 text-[#ff6b4a]" />
+              {testing ? "Đang gửi..." : "Gửi thử 1 thông báo để kiểm tra chuông"}
+            </Button>
           )}
 
-          {/* Tips for iOS */}
-          <div className="rounded-xl bg-muted/40 p-3 text-[11px] text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground flex items-center gap-1">
-              <Smartphone className="w-3.5 h-3.5 text-slate-500" />
-              Mẹo thông báo trên iPhone:
-            </p>
-            <p>• Thông báo sẽ hiện trên Màn hình khóa (Lock Screen), kèm âm thanh và biểu ngữ.</p>
-            <p>• Biểu tượng Lexilo ngoài màn hình chính cũng sẽ hiện chấm đỏ số lượng từ cần học.</p>
+          {/* Quick hint */}
+          <div className="rounded-xl bg-muted/40 p-2.5 text-[11px] text-muted-foreground flex items-center gap-2">
+            <Smartphone className="w-4 h-4 text-slate-500 shrink-0" />
+            <span>Mẹo: Icon Lexilo ngoài Màn hình chính sẽ có chấm đỏ đếm số từ cần học.</span>
           </div>
         </div>
 
