@@ -42,6 +42,7 @@ import {
 } from "@/components/lexilo/deck-dialogs";
 import { CloudSyncDialog } from "@/components/lexilo/cloud-sync-dialog";
 import { NotificationDialog } from "@/components/lexilo/notification-dialog";
+import { StreakUsagi } from "@/components/lexilo/streak-usagi";
 import { checkAllNotifications } from "@/lib/notifications";
 import { getCurrentUser, pullStoreFromCloud, pushStoreToCloud } from "@/lib/supabase";
 import {
@@ -269,7 +270,12 @@ export default function Home() {
     const date = new Date();
     date.setDate(date.getDate() - 6 + index);
     const key = date.toISOString().slice(0, 10);
-    return { label: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][date.getDay()], count: data.reviews.filter((review) => review.date === key).length };
+    return {
+      label: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][date.getDay()],
+      count: data.reviews.filter((review) => review.date === key).length,
+      dateStr: key,
+      isToday: key === today(),
+    };
   });
 
   function showNotice(kind: "success" | "error", text: string) {
@@ -665,7 +671,7 @@ export default function Home() {
         onRestore={restore}
       />
     );
-    return <TodayPanel data={data} due={due} week={week} onStart={() => startScheduled(due)} onLibrary={() => go("library")} onOpenDeck={openDeck} onFree={(deck) => { setSelectedDeckId(deck.id); go("flashcards"); }} onDue={(deck) => startScheduled(data.cards.filter((card) => card.deckId === deck.id && card.due <= Date.now()), deck.id)} />;
+    return <TodayPanel data={data} due={due} todayCount={todayCount} week={week} onStart={() => startScheduled(due)} onLibrary={() => go("library")} onOpenDeck={openDeck} onFree={(deck) => { setSelectedDeckId(deck.id); go("flashcards"); }} onDue={(deck) => startScheduled(data.cards.filter((card) => card.deckId === deck.id && card.due <= Date.now()), deck.id)} />;
   })();
 
   return (
@@ -857,6 +863,7 @@ export default function Home() {
 function TodayPanel({
   data,
   due,
+  todayCount,
   week,
   onStart,
   onLibrary,
@@ -866,7 +873,8 @@ function TodayPanel({
 }: {
   data: Store;
   due: Card[];
-  week: { label: string; count: number }[];
+  todayCount: number;
+  week: { label: string; count: number; dateStr: string; isToday: boolean }[];
   onStart: () => void;
   onLibrary: () => void;
   onOpenDeck: (id: string) => void;
@@ -886,7 +894,7 @@ function TodayPanel({
         <Metric icon={BookOpen} label="Đã bắt đầu học" value={data.cards.filter((card) => card.reps).length} color="#17a673" />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
         <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#6c63ff] to-[#5248e8] p-6 text-white shadow-xl sm:p-7">
           <div className="flex justify-between">
             <div>
@@ -907,23 +915,12 @@ function TodayPanel({
           </Button>
         </div>
 
-        <div className="rounded-[24px] border bg-white p-6">
-          <b>Nhịp học 7 ngày</b>
-          <div className="mt-7 flex h-36 items-end gap-2">
-            {week.map((day, index) => (
-              <div key={index} className="flex flex-1 flex-col items-center gap-2">
-                <div
-                  className="w-full rounded-t-lg transition-all"
-                  style={{
-                    height: `${Math.max(10, Math.min(100, day.count * 12))}%`,
-                    background: day.count ? "#6c63ff" : "#eceef4",
-                  }}
-                />
-                <span className="text-xs font-bold text-slate-400">{day.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <StreakUsagi
+          reviews={data.reviews}
+          todayCount={todayCount}
+          dueCount={due.length}
+          week={week}
+        />
       </div>
 
       <div>
