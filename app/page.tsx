@@ -708,10 +708,16 @@ export default function Home() {
             <Button
               onClick={() => setNotifDialogOpen(true)}
               variant="outline"
-              className="rounded-xl h-9 w-9 p-0 text-[#667085] hover:text-[#17233b] shrink-0"
+              className="relative rounded-xl h-9 w-9 p-0 text-[#667085] hover:text-[#17233b] shrink-0 tap-press"
               title="Cài đặt thông báo"
             >
               <Bell size={16} />
+              {due.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff5e3a] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#ff5e3a]" />
+                </span>
+              )}
             </Button>
             <Button
               onClick={() => setDeckDialogState({ open: true, deck: null })}
@@ -737,12 +743,21 @@ export default function Home() {
               <button
                 key={key}
                 onClick={() => key === "scheduled" ? startScheduled(due) : go(key)}
-                className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 font-bold transition ${
-                  screen === key ? "bg-white text-[#ff5e3a] shadow-sm" : "text-[#667085] hover:bg-white/80"
+                className={`tap-press flex w-full items-center justify-between rounded-2xl px-4 py-3 font-bold transition-all ${
+                  screen === key
+                    ? "bg-white text-[#ff5e3a] shadow-xs border border-orange-100"
+                    : "text-slate-600 hover:bg-white/80 hover:text-slate-900"
                 }`}
               >
-                <Icon size={19} />
-                {label}
+                <div className="flex items-center gap-3">
+                  <Icon size={19} className={screen === key ? "stroke-[2.5]" : "stroke-[2]"} />
+                  <span>{label}</span>
+                </div>
+                {key === "scheduled" && due.length > 0 && (
+                  <span className="rounded-full bg-[#ff4d2e] px-2 py-0.5 text-[11px] font-black text-white animate-pulse">
+                    {due.length}
+                  </span>
+                )}
               </button>
             ))}
             <div className="mt-6 rounded-2xl bg-[#17233b] p-4 text-white shadow-sm">
@@ -768,19 +783,31 @@ export default function Home() {
         <section className="min-w-0">{ready ? content : <LoadingState />}</section>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t bg-white p-2 md:hidden">
-        {navigation.map(([key, Icon, label]) => (
-          <button
-            key={key}
-            onClick={() => key === "scheduled" ? startScheduled(due) : go(key)}
-            className={`flex flex-col items-center gap-1 px-2 py-1 text-[11px] font-bold ${
-              screen === key ? "text-[#ff5e3a]" : "text-slate-400"
-            }`}
-          >
-            <Icon size={19} />
-            {label}
-          </button>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-slate-200/70 bg-white/90 backdrop-blur-xl px-2 py-2 md:hidden shadow-lg pb-[max(12px,env(safe-area-inset-bottom))]">
+        {navigation.map(([key, Icon, label]) => {
+          const isActive = screen === key;
+          return (
+            <button
+              key={key}
+              onClick={() => key === "scheduled" ? startScheduled(due) : go(key)}
+              className={`tap-press relative flex flex-col items-center justify-center rounded-2xl py-1 px-3 transition-all ${
+                isActive ? "text-[#ff5e3a] scale-105" : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <div className="relative">
+                <Icon size={20} className={isActive ? "stroke-[2.5]" : "stroke-[2]"} />
+                {key === "scheduled" && due.length > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff4d2e] px-1 text-[10px] font-black text-white shadow-xs">
+                    {due.length}
+                  </span>
+                )}
+              </div>
+              <span className={`mt-1 text-[10px] ${isActive ? "font-black" : "font-bold"}`}>
+                {label}
+              </span>
+            </button>
+          );
+        })}
       </nav>
 
       {/* Edit Single Card Dialog */}
@@ -1591,13 +1618,13 @@ function CardIdentity({ card }: { card: Card }) {
 
 function Metric({ icon: Icon, label, value, color }: { icon: typeof Brain; label: string; value: number; color: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border bg-white p-5">
-      <span className="grid size-12 place-items-center rounded-2xl" style={{ background: `${color}18`, color }}>
-        <Icon size={23} />
+    <div className="tap-press flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl shadow-xs" style={{ background: `${color}15`, color }}>
+        <Icon size={22} className="stroke-[2.5]" />
       </span>
-      <div>
-        <b className="block text-2xl font-black">{value}</b>
-        <span className="text-sm font-semibold text-slate-500">{label}</span>
+      <div className="min-w-0">
+        <b className="block text-2xl font-black text-slate-900 tracking-tight">{value}</b>
+        <span className="text-xs sm:text-sm font-semibold text-slate-500 truncate block">{label}</span>
       </div>
     </div>
   );

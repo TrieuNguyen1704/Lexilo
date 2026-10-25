@@ -69,29 +69,33 @@ function ModeHeader({ title, subtitle, onBack, trailing }: { title: string; subt
 }
 
 function RatingButtons({ onRate, disabled }: { onRate: (rating: Rating) => void; disabled?: boolean }) {
-  const ratings: [Rating, string, string, string, string][] = [
-    ["again", "Quên", "10 phút", "#ef4444", "1"],
-    ["hard", "Khó", "1 ngày", "#e9a11b", "2"],
-    ["good", "Tốt", "Tự tính", "#17a673", "3"],
-    ["easy", "Dễ", "4+ ngày", "#6c63ff", "4"],
+  const ratings: [Rating, string, string, string, string, string][] = [
+    ["again", "Quên", "10 phút", "#ef4444", "bg-red-50/80 hover:bg-red-100 text-red-600 border-red-200/90", "1"],
+    ["hard", "Khó", "1 ngày", "#f59e0b", "bg-amber-50/80 hover:bg-amber-100 text-amber-700 border-amber-200/90", "2"],
+    ["good", "Tốt", "Tự tính", "#10b981", "bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-200/90", "3"],
+    ["easy", "Dễ", "4+ ngày", "#6366f1", "bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border-indigo-200/90", "4"],
   ];
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-      {ratings.map(([rating, label, hint, color, key]) => (
+      {ratings.map(([rating, label, hint, color, styleClass, key]) => (
         <button
           key={rating}
           disabled={disabled}
-          onClick={() => onRate(rating)}
-          className="group relative rounded-2xl border-2 bg-white p-3.5 text-center font-black transition-all hover:-translate-y-1 hover:shadow-lg disabled:opacity-50"
-          style={{ borderColor: `${color}35` }}
+          onClick={() => {
+            if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+              try { navigator.vibrate(12); } catch {}
+            }
+            onRate(rating);
+          }}
+          className={`tap-press group relative rounded-2xl border-2 p-3 sm:p-3.5 text-center font-black transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 ${styleClass}`}
         >
-          <div className="flex items-center justify-center gap-1.5" style={{ color }}>
-            <kbd className="inline-flex size-5 items-center justify-center rounded-md border bg-slate-50 font-mono text-[11px] font-bold text-slate-500 shadow-2xs">
+          <div className="flex items-center justify-center gap-1.5">
+            <kbd className="inline-flex size-5 items-center justify-center rounded-md border font-mono text-[11px] font-bold shadow-2xs bg-white/80">
               {key}
             </kbd>
-            <span className="text-base">{label}</span>
+            <span className="text-base font-black">{label}</span>
           </div>
-          <span className="mt-1 block text-xs font-semibold text-slate-400">{hint}</span>
+          <span className="mt-1 block text-xs font-semibold opacity-80">{hint}</span>
         </button>
       ))}
     </div>
@@ -185,7 +189,12 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: { cards: Card[]
           {/* Quizlet-style 3D Flashcard */}
           <div
             className="perspective-1000 w-full min-h-[420px] cursor-pointer select-none"
-            onClick={() => setRevealed((value) => !value)}
+            onClick={() => {
+              if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                try { navigator.vibrate(8); } catch {}
+              }
+              setRevealed((value) => !value);
+            }}
             role="button"
             tabIndex={0}
             aria-label="Thẻ ghi nhớ. Bấm phím Space hoặc nhấp chuột để lật thẻ."
@@ -880,7 +889,28 @@ function Feedback({ correct, expected, onContinue }: { correct: boolean; expecte
 }
 
 function Completion({ title, detail, onBack }: { title: string; detail: string; onBack: () => void }) {
-  return <div className="rounded-[30px] border bg-white p-10 text-center shadow-sm"><span className="mx-auto grid size-20 place-items-center rounded-full bg-[#e7faf2] text-[#17a673]"><Check size={40} /></span><h2 className="mt-6 text-3xl font-black">{title}</h2><p className="mt-2 text-slate-500">{detail}</p><Button onClick={onBack} className="mt-6">Quay lại</Button></div>;
+  return (
+    <div className="rounded-[32px] border border-emerald-200/80 bg-gradient-to-b from-white via-white to-emerald-50/40 p-8 sm:p-10 text-center shadow-md">
+      <div className="relative mx-auto w-32 h-32 sm:w-36 sm:h-36 flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-amber-300/40 blur-xl animate-pulse" />
+        <img
+          src="/usagi-cheer.png"
+          alt="Usagi Cổ Vũ"
+          className="relative w-28 h-28 sm:w-32 sm:h-32 object-contain animate-bounce drop-shadow-md select-none"
+        />
+      </div>
+      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider mt-4">
+        <Check size={14} /> Hoàn tất
+      </span>
+      <h2 className="mt-3 text-2xl sm:text-3xl font-black text-slate-900">{title}</h2>
+      <p className="mt-2 text-sm text-slate-600 max-w-md mx-auto leading-relaxed">{detail}</p>
+      <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+        <Button onClick={onBack} className="h-12 px-7 rounded-2xl bg-[#6366f1] hover:bg-[#4f46e5] text-white font-black shadow-md tap-press">
+          Trở về trang chủ
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function EmptyState({ title, onBack }: { title: string; onBack: () => void }) {
