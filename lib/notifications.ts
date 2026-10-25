@@ -10,7 +10,7 @@ const STORAGE_LAST_DAILY_DATE = "lexilo_last_daily_date"; // "YYYY-MM-DD"
 const STORAGE_NOTIFIED_CARD_IDS = "lexilo_notified_card_ids"; // JSON array of string IDs
 
 export function isNotificationSupported(): boolean {
-  return typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator;
+  return typeof window !== "undefined" && "Notification" in window;
 }
 
 export function getNotificationPermission(): NotificationStatus {
@@ -62,17 +62,43 @@ export function setCustomReminderTime(timeStr: string) {
   window.localStorage.setItem(STORAGE_CUSTOM_TIME, timeStr);
 }
 
+// Helper to ensure service worker is active and ready
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+
+  try {
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register("/sw.js");
+    }
+
+    const readyReg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    ]);
+
+    return readyReg || reg;
+  } catch (err) {
+    console.warn("Could not get SW registration:", err);
+    return null;
+  }
+}
+
 // Request permission and send welcome notification
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!isNotificationSupported()) return false;
 
   try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       setNotificationsEnabled(true);
       await sendNotification(
         "Lexilo đã bật thông báo! 🧠",
-        "Bạn sẽ nhận được thông báo khi có từ vựng đến hạn ôn tập."
+        "Hệ thống sẽ nhắc bạn khi có từ vựng đến hạn ôn tập."
       );
       return true;
     }
@@ -83,37 +109,47 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
-// Send notification via Service Worker registration
+// Send notification via Service Worker (iOS PWA) or direct Notification (Desktop)
 export async function sendNotification(title: string, body: string, dataUrl = "/"): Promise<boolean> {
-  if (!isNotificationSupported() || Notification.permission !== "granted") {
+  if (typeof window === "undefined") return false;
+  if (!("Notification" in window) || Notification.permission !== "granted") {
     return false;
   }
 
+  const options: NotificationOptions = {
+    body,
+    icon: "/icon-192.svg",
+    badge: "/icon-192.svg",
+    tag: "lexilo-" + Date.now(),
+    data: { url: dataUrl },
+  };
+
+  // 1. Try Service Worker showNotification first (Required for iOS Safari PWA)
   try {
-    const registration = await navigator.serviceWorker.ready;
-    if (registration && "showNotification" in registration) {
-      await registration.showNotification(title, {
-        body,
-        icon: "/icon-192.svg",
-        badge: "/icon-192.svg",
-        tag: "lexilo-due-notification",
-        data: { url: dataUrl },
-      });
+    const reg = await getServiceWorkerRegistration();
+    if (reg && "showNotification" in reg) {
+      await reg.showNotification(title, options);
       return true;
     }
   } catch (err) {
-    console.error("Failed to show notification via service worker:", err);
+    console.warn("SW showNotification failed:", err);
   }
 
+  // 2. Direct Notification API fallback (Desktop browsers)
   try {
-    new Notification(title, {
-      body,
-      icon: "/icon-192.svg",
-    });
-    return true;
-  } catch {
-    return false;
+    if (typeof Notification === "function") {
+      const n = new Notification(title, options);
+      n.onclick = () => {
+        window.focus();
+        n.close();
+      };
+      return true;
+    }
+  } catch (err) {
+    console.warn("Direct Notification failed:", err);
   }
+
+  return false;
 }
 
 // Update app icon badge on iOS and Android
@@ -154,7 +190,6 @@ export async function checkRealtimeDueNotification(cards: Card[]): Promise<boole
   const now = Date.now();
   const currentDueCards = cards.filter((c) => c.due <= now);
   if (currentDueCards.length === 0) {
-    // Reset notified IDs if no cards are due
     setNotifiedCardIds([]);
     return false;
   }
