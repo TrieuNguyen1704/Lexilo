@@ -17,6 +17,7 @@ after(async () => vite.close());
 const streak = await vite.ssrLoadModule("/lib/domain/streak.ts");
 const cardsDomain = await vite.ssrLoadModule("/lib/domain/cards.ts");
 const fsrsDomain = await vite.ssrLoadModule("/lib/domain/fsrs.ts");
+const geminiService = await vite.ssrLoadModule("/lib/services/gemini.ts");
 
 test("calculates consecutive streak across days including yesterday fallback", () => {
   const ref = new Date("2026-11-12T10:00:00.000Z");
@@ -94,4 +95,14 @@ test("schedules card review cleanly using ts-fsrs Grade mapping", () => {
   assert.equal(review.cardId, "c1");
   assert.equal(review.date, "2026-11-12");
   assert.equal(review.rating, "good");
+});
+
+test("extracts JSON cleanly from fenced Gemini responses and defaults to gemini-3.5-flash", () => {
+  const fenced = "```json\n{\"isCorrect\": true, \"feedback\": \"Chuẩn rồi!\"}\n```";
+  const parsed = geminiService.extractJsonFromGeminiText(fenced);
+  assert.deepEqual(parsed, { isCorrect: true, feedback: "Chuẩn rồi!" });
+
+  const cfg = geminiService.getGeminiConfig();
+  assert.equal(cfg.model, "gemini-3.5-flash");
+  assert.equal(cfg.enabled, false);
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Brain, Cloud, Flame, Plus } from "lucide-react";
+import { Bell, Brain, Cloud, Flame, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CloudUser } from "@/types/lexilo";
 
@@ -8,8 +8,10 @@ interface AppHeaderProps {
   todayCount: number;
   dueCount: number;
   cloudUser: CloudUser | null;
+  geminiActive: boolean;
   onGoHome: () => void;
   onOpenSync: () => void;
+  onOpenGemini: () => void;
   onOpenNotifications: () => void;
   onCreateDeck: () => void;
   onQuickAddCard: () => void;
@@ -19,8 +21,10 @@ export function AppHeader({
   todayCount,
   dueCount,
   cloudUser,
+  geminiActive,
   onGoHome,
   onOpenSync,
+  onOpenGemini,
   onOpenNotifications,
   onCreateDeck,
   onQuickAddCard,
@@ -55,6 +59,23 @@ export function AppHeader({
               {cloudUser ? cloudUser.email?.split("@")[0] : "Đồng bộ đám mây"}
             </span>
             <span className="sm:hidden">Đồng bộ</span>
+          </Button>
+
+          <Button
+            onClick={onOpenGemini}
+            variant="outline"
+            className={`tap-press relative h-9 w-9 shrink-0 rounded-xl p-0 ${
+              geminiActive
+                ? "border-indigo-300 bg-indigo-50 text-[#6366f1] hover:bg-indigo-100"
+                : "text-[#667085] hover:text-[#17233b]"
+            }`}
+            title="Cài đặt Gemini AI"
+            aria-label="Cài đặt Gemini AI"
+          >
+            <Sparkles size={16} />
+            {geminiActive && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full bg-[#6366f1]" />
+            )}
           </Button>
 
           <Button

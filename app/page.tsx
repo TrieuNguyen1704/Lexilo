@@ -16,12 +16,14 @@ import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import type { NavItem } from "@/components/layout/navigation-config";
 import { NoticeToast } from "@/components/layout/notice-toast";
 import { CloudSyncDialog } from "@/components/settings/cloud-sync-dialog";
+import { GeminiDialog } from "@/components/settings/gemini-dialog";
 import { NotificationDialog } from "@/components/settings/notification-dialog";
 import { FlashcardsMode } from "@/components/study/flashcards-mode";
 import { LearnMode } from "@/components/study/learn-mode";
 import { MatchMode } from "@/components/study/match-mode";
 import { ScheduledStudy } from "@/components/study/scheduled-study";
 import { TestMode } from "@/components/study/test-mode";
+import { emitGeminiConfigChange, useGeminiStatus } from "@/hooks/use-gemini-status";
 import { useLexiloStore } from "@/hooks/use-lexilo-store";
 import { useNotice } from "@/hooks/use-notice";
 import { useStudyNotifications } from "@/hooks/use-study-notifications";
@@ -33,6 +35,7 @@ import type { Screen } from "@/types/navigation";
 export default function Home() {
   const { notice, showNotice } = useNotice();
   const store = useLexiloStore(showNotice);
+  const gemini = useGeminiStatus();
   useStudyNotifications(store.ready, store.data.cards);
 
   const [screen, setScreen] = useState<Screen>("today");
@@ -57,6 +60,7 @@ export default function Home() {
   const [deleteDeckBusy, setDeleteDeckBusy] = useState(false);
 
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [geminiDialogOpen, setGeminiDialogOpen] = useState(false);
   const [notifDialogOpen, setNotifDialogOpen] = useState(false);
 
   const due = useMemo(
@@ -216,6 +220,10 @@ export default function Home() {
           <LearnMode
             cards={deckCards}
             title={deckTitle}
+            geminiActive={gemini.active}
+            geminiModel={gemini.model}
+            onOpenGeminiSettings={() => setGeminiDialogOpen(true)}
+            onNotice={showNotice}
             onBack={() => setScreen("deck")}
             onBatchReview={store.batchReview}
           />
@@ -225,6 +233,10 @@ export default function Home() {
           <TestMode
             cards={deckCards}
             title={deckTitle}
+            geminiActive={gemini.active}
+            geminiModel={gemini.model}
+            onOpenGeminiSettings={() => setGeminiDialogOpen(true)}
+            onNotice={showNotice}
             onBack={() => setScreen("deck")}
             onBatchReview={store.batchReview}
           />
@@ -266,6 +278,9 @@ export default function Home() {
             selectedDeckId={store.selectedDeckId}
             onSelectDeckId={store.setSelectedDeckId}
             ollamaAvailable={store.ollama}
+            geminiActive={gemini.active}
+            geminiModel={gemini.model}
+            onOpenGeminiSettings={() => setGeminiDialogOpen(true)}
             onSaveCards={handleSaveCards}
             onNotice={showNotice}
           />
@@ -341,8 +356,10 @@ export default function Home() {
         todayCount={todayCount}
         dueCount={due.length}
         cloudUser={store.cloudUser}
+        geminiActive={gemini.active}
         onGoHome={() => setScreen("today")}
         onOpenSync={() => setSyncDialogOpen(true)}
+        onOpenGemini={() => setGeminiDialogOpen(true)}
         onOpenNotifications={() => setNotifDialogOpen(true)}
         onCreateDeck={() => setDeckDialog({ open: true, deck: null })}
         onQuickAddCard={() => selectedDeck && setAddingCardToDeck(selectedDeck)}
@@ -427,6 +444,13 @@ export default function Home() {
         currentStore={store.data}
         onStoreUpdated={store.commitState}
         onAuthChanged={() => void store.refreshCloudUser()}
+        onNotice={showNotice}
+      />
+
+      <GeminiDialog
+        open={geminiDialogOpen}
+        onOpenChange={setGeminiDialogOpen}
+        onSaved={emitGeminiConfigChange}
         onNotice={showNotice}
       />
 

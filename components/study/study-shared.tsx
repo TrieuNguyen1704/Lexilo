@@ -131,29 +131,39 @@ export function RatingButtons({
 export function StudyFeedback({
   correct,
   expected,
+  aiNote,
+  aiExplanation,
   onContinue,
 }: {
   correct: boolean;
   expected: string;
+  aiNote?: string;
+  aiExplanation?: string;
   onContinue: () => void;
 }) {
   return (
     <div
       className={`mt-5 rounded-2xl p-4 ${
-        correct ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+        correct ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"
       }`}
     >
       <div className="flex items-start gap-3">
         {correct ? <Check className="shrink-0" /> : <X className="shrink-0" />}
-        <div className="flex-1">
+        <div className="min-w-0 flex-1 space-y-1">
           <b>{correct ? "Chính xác!" : "Chưa đúng"}</b>
           {!correct && (
-            <p className="mt-1 text-sm">
+            <p className="text-sm">
               Đáp án: <b>{expected}</b>
             </p>
           )}
+          {aiNote && <p className="text-xs font-medium opacity-90">{aiNote}</p>}
+          {aiExplanation && (
+            <p className="rounded-xl bg-white/60 px-2.5 py-1.5 text-xs font-medium text-slate-700">
+              💡 {aiExplanation}
+            </p>
+          )}
         </div>
-        <Button type="button" size="sm" onClick={onContinue}>
+        <Button type="button" size="sm" onClick={onContinue} className="shrink-0">
           Tiếp tục
           <ChevronRight />
         </Button>

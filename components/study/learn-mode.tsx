@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, HelpCircle } from "lucide-react";
+import { Check, HelpCircle, Loader2, Settings2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -12,7 +12,12 @@ import {
   questionFor,
   resolveDirection,
 } from "@/lib/domain/quiz";
-import type { Card, DirectionChoice, QuestionKind } from "@/types/lexilo";
+import {
+  generateLearnQuestionsWithAi,
+  gradeAnswerWithAi,
+} from "@/lib/services/gemini";
+import type { AiLearnQuestion } from "@/types/ai";
+import type { Card, DirectionChoice, Notice, QuestionKind } from "@/types/lexilo";
 import {
   ModeHeader,
   type ReviewResult,
@@ -25,11 +30,31 @@ import {
 interface LearnModeProps {
   cards: Card[];
   title: string;
+  geminiActive: boolean;
+  geminiModel: string;
+  onOpenGeminiSettings: () => void;
+  onNotice: (kind: Notice["kind"], text: string) => void;
   onBack: () => void;
   onBatchReview: (results: ReviewResult[]) => Promise<void>;
 }
 
-export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProps) {
+interface LearnFeedbackState {
+  correct: boolean;
+  expected: string;
+  aiNote?: string;
+  aiExplanation?: string;
+}
+
+export function LearnMode({
+  cards,
+  title,
+  geminiActive,
+  geminiModel,
+  onOpenGeminiSettings,
+  onNotice,
+  onBack,
+  onBatchReview,
+}: LearnModeProps) {
   const [directionChoice, setDirectionChoice] = useState<DirectionChoice>("both");
   const [queue, setQueue] = useState(() => cards.map((card) => card.id));
   const [mastery, setMastery] = useState<Record<string, number>>({});
@@ -38,25 +63,98 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
   const [correctCount, setCorrectCount] = useState(0);
   const [wrongCount, setWrongCount] = useState(0);
   const [typed, setTyped] = useState("");
-  const [feedback, setFeedback] = useState<{ correct: boolean; expected: string } | null>(null);
+  const [feedback, setFeedback] = useState<LearnFeedbackState | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const card = cards.find((candidate) => candidate.id === queue[0]);
-  const direction = resolveDirection(directionChoice, attempts);
-  const kind: QuestionKind = attempts % 2 === 0 ? "multiple-choice" : "typing";
-  const choices = useMemo(
-    () => (card ? choicesFor(card, cards, direction) : []),
-    [card, cards, direction],
-  );
-  const remaining = cards.filter((item) => (mastery[item.id] || 0) < 2).length;
+  const [useAiMode, setUseAiMode] = useState(geminiActive);
+  const [aiQuestions, setAiQuestions] = useState<Record<string, AiLearnQuestion>>({});
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [gradingAi, setGradingAi] = useState(false);
 
-  function answer(value: string) {
-    if (!card || feedback) return;
-    const expected = answerFor(card, direction);
-    const correct = normalizeAnswer(value) === normalizeAnswer(expected);
+  const card = cards.find((candidate) => candidate.id === queue[0]);
+  const aiQuestion = card && useAiMode ? aiQuestions[card.id] : undefined;
+
+  const direction = aiQuestion?.direction ?? resolveDirection(directionChoice, attempts);
+  const kind: QuestionKind =
+    aiQuestion?.kind ?? (attempts % 2 === 0 ? "multiple-choice" : "typing");
+  const promptText = card ? aiQuestion?.prompt || questionFor(card, direction) : "";
+  const expectedText = card ? aiQuestion?.expected || answerFor(card, direction) : "";
+
+  const choices = useMemo(() => {
+    if (!card) return [];
+    if (aiQuestion?.kind === "multiple-choice" && aiQuestion.choices.length >= 2) {
+      return aiQuestion.choices;
+    }
+    return choicesFor(card, cards, direction);
+  }, [aiQuestion, card, cards, direction]);
+
+  const remaining = cards.filter((item) => (mastery[item.id] || 0) < 2).length;
+  const aiQuestionsCount = Object.keys(aiQuestions).length;
+
+  async function handleGenerateAiQuestions() {
+    if (!geminiActive) {
+      onOpenGeminiSettings();
+      return;
+    }
+    setGeneratingAi(true);
+    try {
+      const generated = await generateLearnQuestionsWithAi(cards, directionChoice);
+      setAiQuestions(generated);
+      setUseAiMode(true);
+      onNotice(
+        "success",
+        `Gemini (${geminiModel}) đã tạo ${Object.keys(generated).length} câu hỏi ngữ cảnh!`,
+      );
+    } catch (error) {
+      onNotice("error", (error as Error).message);
+    } finally {
+      setGeneratingAi(false);
+    }
+  }
+
+  async function answer(value: string) {
+    if (!card || feedback || gradingAi) return;
+
+    const exactMatch = normalizeAnswer(value) === normalizeAnswer(expectedText);
+
+    if (kind === "typing" && !exactMatch && value.trim() && geminiActive && useAiMode) {
+      setTyped(value);
+      setGradingAi(true);
+      try {
+        const graded = await gradeAnswerWithAi({
+          card,
+          direction,
+          prompt: promptText,
+          expectedAnswer: expectedText,
+          userAnswer: value,
+        });
+        recordOutcome(
+          graded.isCorrect,
+          expectedText,
+          graded.feedback,
+          graded.explanation || aiQuestion?.explanation,
+        );
+      } catch {
+        recordOutcome(false, expectedText, undefined, aiQuestion?.explanation);
+      } finally {
+        setGradingAi(false);
+      }
+      return;
+    }
+
     setTyped(value);
-    setFeedback({ correct, expected });
+    recordOutcome(exactMatch, expectedText, undefined, aiQuestion?.explanation);
+  }
+
+  function recordOutcome(
+    correct: boolean,
+    expected: string,
+    aiNote?: string,
+    aiExplanation?: string,
+  ) {
+    if (!card) return;
+    setFeedback({ correct, expected, aiNote, aiExplanation });
     if (correct) {
       setCorrectCount((count) => count + 1);
     } else {
@@ -114,6 +212,74 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
         }
       />
 
+      {cards.length > 0 && card && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-violet-50/70 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <Sparkles size={15} className={geminiActive && useAiMode ? "text-[#6366f1]" : "text-slate-400"} />
+            {geminiActive ? (
+              <span>
+                Gia sư Gemini (<code>{geminiModel}</code>):{" "}
+                <b className={useAiMode ? "text-[#6366f1]" : "text-slate-500"}>
+                  {useAiMode ? "Đang bật chấm nghĩa thông minh" : "Đang tắt"}
+                </b>
+                {aiQuestionsCount > 0 && useAiMode ? ` · ${aiQuestionsCount} câu ngữ cảnh` : ""}
+              </span>
+            ) : (
+              <span className="text-slate-500">
+                Bật Gemini AI để chấm nghĩa linh hoạt &amp; tạo câu hỏi ngữ cảnh
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {geminiActive && (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={useAiMode ? "default" : "outline"}
+                  onClick={() => setUseAiMode((prev) => !prev)}
+                  className={`h-8 rounded-xl text-xs font-bold ${
+                    useAiMode ? "bg-[#6366f1] hover:bg-[#4f46e5]" : ""
+                  }`}
+                >
+                  {useAiMode ? "AI: BẬT" : "AI: TẮT"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={generatingAi}
+                  onClick={() => void handleGenerateAiQuestions()}
+                  className="h-8 gap-1 rounded-xl border-indigo-200 text-xs font-bold text-[#6366f1] hover:bg-indigo-50"
+                >
+                  {generatingAi ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={13} />
+                  )}
+                  {generatingAi
+                    ? "Đang tạo..."
+                    : aiQuestionsCount > 0
+                    ? "Tạo lại đề AI"
+                    : "Tạo câu hỏi AI"}
+                </Button>
+              </>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onOpenGeminiSettings}
+              className="h-8 gap-1 rounded-xl px-2.5 text-xs font-bold text-slate-600"
+            >
+              <Settings2 size={13} />
+              {geminiActive ? "Key" : "Cài API Key"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {!cards.length ? (
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : !card ? (
@@ -143,7 +309,8 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
 
           <div className="mt-4 rounded-[28px] border bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-black tracking-[.15em] text-[#6c63ff] uppercase">
+              <span className="flex items-center gap-1.5 text-xs font-black tracking-[.15em] text-[#6c63ff] uppercase">
+                {aiQuestion && <Sparkles size={13} />}
                 {kind === "multiple-choice" ? "Trắc nghiệm" : "Gõ đáp án"} ·{" "}
                 {direction === "en-vi" ? "EN → VI" : "VI → EN"}
               </span>
@@ -152,13 +319,16 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
               </span>
             </div>
 
-            <h2 className="my-9 text-center text-2xl font-black sm:text-3xl">
-              {questionFor(card, direction)}
-            </h2>
-            {direction === "en-vi" && (
-              <div className="-mt-6 mb-7">
+            <h2 className="my-8 text-center text-2xl font-black sm:text-3xl">{promptText}</h2>
+            {direction === "en-vi" && !aiQuestion && (
+              <div className="-mt-5 mb-7">
                 <WordMeta card={card} />
               </div>
+            )}
+            {aiQuestion?.hint && (
+              <p className="-mt-4 mb-6 text-center text-xs font-semibold text-indigo-600">
+                Gợi ý: {aiQuestion.hint}
+              </p>
             )}
 
             {kind === "multiple-choice" ? (
@@ -167,7 +337,7 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
                   <button
                     key={choice}
                     disabled={Boolean(feedback)}
-                    onClick={() => answer(choice)}
+                    onClick={() => void answer(choice)}
                     className={`rounded-2xl border p-4 text-left font-bold transition ${
                       feedback && normalizeAnswer(choice) === normalizeAnswer(feedback.expected)
                         ? "border-emerald-400 bg-emerald-50 text-emerald-700"
@@ -182,13 +352,13 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  answer(typed);
+                  void answer(typed);
                 }}
                 className="grid gap-3"
               >
                 <Input
                   autoFocus
-                  disabled={Boolean(feedback)}
+                  disabled={Boolean(feedback) || gradingAi}
                   value={typed}
                   onChange={(event) => setTyped(event.target.value)}
                   placeholder="Nhập câu trả lời..."
@@ -198,13 +368,22 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={Boolean(feedback)}
-                    onClick={() => answer("")}
+                    disabled={Boolean(feedback) || gradingAi}
+                    onClick={() => void answer("")}
                   >
                     <HelpCircle />
                     Tôi không biết
                   </Button>
-                  <Button disabled={Boolean(feedback) || !typed.trim()}>Kiểm tra</Button>
+                  <Button disabled={Boolean(feedback) || gradingAi || !typed.trim()}>
+                    {gradingAi ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Gemini đang chấm...
+                      </>
+                    ) : (
+                      "Kiểm tra"
+                    )}
+                  </Button>
                 </div>
               </form>
             )}
@@ -213,6 +392,8 @@ export function LearnMode({ cards, title, onBack, onBatchReview }: LearnModeProp
               <StudyFeedback
                 correct={feedback.correct}
                 expected={feedback.expected}
+                aiNote={feedback.aiNote}
+                aiExplanation={feedback.aiExplanation}
                 onContinue={continueLearning}
               />
             )}

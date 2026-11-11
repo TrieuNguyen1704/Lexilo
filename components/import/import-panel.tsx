@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Settings2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { normalizePartOfSpeech } from "@/lib/domain/cards";
 import { createClozes, parseQuickImport } from "@/lib/domain/importer";
+import { generateFlashcardsWithGemini } from "@/lib/services/gemini";
 import { generateAiCards } from "@/lib/services/lexilo-repository";
 import type { CardDraft, Deck, Notice } from "@/types/lexilo";
 import type { ImportMode, PreviewCard } from "@/types/navigation";
@@ -17,6 +18,9 @@ interface ImportPanelProps {
   selectedDeckId: string;
   onSelectDeckId: (id: string) => void;
   ollamaAvailable: boolean;
+  geminiActive: boolean;
+  geminiModel: string;
+  onOpenGeminiSettings: () => void;
   onSaveCards: (
     deckId: string,
     drafts: CardDraft[],
@@ -30,6 +34,9 @@ export function ImportPanel({
   selectedDeckId,
   onSelectDeckId,
   ollamaAvailable,
+  geminiActive,
+  geminiModel,
+  onOpenGeminiSettings,
   onSaveCards,
   onNotice,
 }: ImportPanelProps) {
@@ -54,7 +61,10 @@ export function ImportPanel({
     setAiBusy(true);
     setAiPreview([]);
     try {
-      const generated = await generateAiCards(bulk);
+      const generated = geminiActive
+        ? await generateFlashcardsWithGemini(bulk)
+        : await generateAiCards(bulk);
+
       setAiPreview(
         generated.map((card) => ({
           ...card,
@@ -107,7 +117,9 @@ export function ImportPanel({
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-black">Nhập bộ thẻ nhanh</h1>
-      <p className="mt-2 text-slate-500">Dán nhiều dòng hoặc nhờ AI local tạo bản xem trước.</p>
+      <p className="mt-2 text-slate-500">
+        Dán nhiều dòng hoặc nhờ Gemini AI / AI local tạo bản xem trước.
+      </p>
 
       <div className="mt-6 rounded-[26px] border bg-white p-5 shadow-sm sm:p-6">
         <Tabs
@@ -120,7 +132,7 @@ export function ImportPanel({
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pairs">Từ &amp; nghĩa</TabsTrigger>
             <TabsTrigger value="cloze">Điền khuyết</TabsTrigger>
-            <TabsTrigger value="ai">AI local</TabsTrigger>
+            <TabsTrigger value="ai">AI tạo thẻ</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pairs">
@@ -150,15 +162,31 @@ export function ImportPanel({
 
           <TabsContent value="ai">
             <div
-              className={`my-4 rounded-xl p-3 text-sm font-bold ${
-                ollamaAvailable
+              className={`my-4 flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 text-sm font-bold ${
+                geminiActive
+                  ? "bg-indigo-50 text-indigo-700"
+                  : ollamaAvailable
                   ? "bg-emerald-50 text-emerald-700"
                   : "bg-amber-50 text-amber-700"
               }`}
             >
-              {ollamaAvailable
-                ? "● Ollama đang kết nối"
-                : "○ Ollama chưa chạy — các chế độ học vẫn hoạt động bình thường"}
+              <span>
+                {geminiActive
+                  ? `● Đang dùng Gemini (${geminiModel}) trực tuyến`
+                  : ollamaAvailable
+                  ? "● Ollama local đang kết nối"
+                  : "○ Chưa bật Gemini API Key (hoặc Ollama) — hãy cài API Key để dùng AI"}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onOpenGeminiSettings}
+                className="h-8 gap-1 rounded-lg bg-white text-xs font-bold text-slate-700"
+              >
+                <Settings2 size={13} />
+                {geminiActive ? "Đổi Gemini Key" : "Cài Gemini API Key"}
+              </Button>
             </div>
             <Textarea
               value={bulk}

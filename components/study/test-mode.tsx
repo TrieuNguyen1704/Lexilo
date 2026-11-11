@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Loader2, Settings2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,12 @@ import {
   resolveDirection,
   shuffle,
 } from "@/lib/domain/quiz";
-import type { Card, Direction, DirectionChoice, QuestionKind } from "@/types/lexilo";
+import {
+  generateTestWithAi,
+  gradeAndSummarizeTestWithAi,
+} from "@/lib/services/gemini";
+import type { AiTestQuestion, AiTestSummary } from "@/types/ai";
+import type { Card, DirectionChoice, Notice, QuestionKind } from "@/types/lexilo";
 import {
   ModeHeader,
   type ReviewResult,
@@ -20,32 +25,72 @@ import {
   StudyEmptyState,
 } from "./study-shared";
 
-interface TestQuestion {
-  key: string;
-  cardId: string;
-  kind: QuestionKind;
-  direction: Direction;
-  choices: string[];
-}
-
 interface TestModeProps {
   cards: Card[];
   title: string;
+  geminiActive: boolean;
+  geminiModel: string;
+  onOpenGeminiSettings: () => void;
+  onNotice: (kind: Notice["kind"], text: string) => void;
   onBack: () => void;
   onBatchReview: (results: ReviewResult[]) => Promise<void>;
 }
 
-export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps) {
+export function TestMode({
+  cards,
+  title,
+  geminiActive,
+  geminiModel,
+  onOpenGeminiSettings,
+  onNotice,
+  onBack,
+  onBatchReview,
+}: TestModeProps) {
   const [count, setCount] = useState(Math.min(10, Math.max(1, cards.length)));
   const [kindChoice, setKindChoice] = useState<QuestionKind | "mixed">("mixed");
   const [directionChoice, setDirectionChoice] = useState<DirectionChoice>("both");
-  const [questions, setQuestions] = useState<TestQuestion[]>([]);
+  const [useAiEngine, setUseAiEngine] = useState(geminiActive);
+
+  const [questions, setQuestions] = useState<AiTestQuestion[]>([]);
+  const [testUsedAi, setTestUsedAi] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [aiGrades, setAiGrades] = useState<
+    Record<string, { isCorrect: boolean; feedback?: string }>
+  >({});
+  const [aiSummary, setAiSummary] = useState<AiTestSummary | null>(null);
+
+  const [generating, setGenerating] = useState(false);
+  const [grading, setGrading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  function createTest(source = cards) {
+  async function createTest(source = cards) {
+    setAnswers({});
+    setAiGrades({});
+    setAiSummary(null);
+    setSubmitted(false);
+    setSaved(false);
+
+    if (useAiEngine && geminiActive) {
+      setGenerating(true);
+      try {
+        const aiGenerated = await generateTestWithAi({
+          cards: source,
+          count,
+          kindChoice,
+          directionChoice,
+        });
+        setQuestions(aiGenerated);
+        setTestUsedAi(true);
+        return;
+      } catch (error) {
+        onNotice("error", `${(error as Error).message} Đang dùng đề tiêu chuẩn.`);
+      } finally {
+        setGenerating(false);
+      }
+    }
+
     const chosen = shuffle(source).slice(0, Math.min(count, source.length));
     setQuestions(
       chosen.map((card, index) => {
@@ -61,27 +106,68 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
           cardId: card.id,
           kind,
           direction,
+          prompt: questionFor(card, direction),
           choices: choicesFor(card, cards, direction),
+          expected: answerFor(card, direction),
         };
       }),
     );
-    setAnswers({});
-    setSubmitted(false);
-    setSaved(false);
+    setTestUsedAi(false);
+  }
+
+  async function handleSubmitTest(event: React.FormEvent) {
+    event.preventDefault();
+
+    if (geminiActive && (testUsedAi || useAiEngine)) {
+      setGrading(true);
+      try {
+        const payload = questions.map((q) => {
+          const card = cards.find((c) => c.id === q.cardId)!;
+          const userAnswer = answers[q.key] || "";
+          const alreadyExact = normalizeAnswer(userAnswer) === normalizeAnswer(q.expected);
+          return {
+            key: q.key,
+            word: card.front,
+            meaning: card.back,
+            prompt: q.prompt,
+            expected: q.expected,
+            userAnswer,
+            kind: q.kind,
+            alreadyExact,
+          };
+        });
+
+        const graded = await gradeAndSummarizeTestWithAi(payload);
+        setAiGrades(graded.gradesByKey);
+        setAiSummary(graded.summary);
+      } catch (error) {
+        onNotice("error", (error as Error).message);
+      } finally {
+        setGrading(false);
+      }
+    }
+
+    setSubmitted(true);
   }
 
   const results = questions.map((question) => {
     const card = cards.find((candidate) => candidate.id === question.cardId)!;
-    const expected = answerFor(card, question.direction);
     const answer = answers[question.key] || "";
+    const exactMatch = normalizeAnswer(answer) === normalizeAnswer(question.expected);
+    const aiGrade = aiGrades[question.key];
+    const correct =
+      question.kind === "typing" && aiGrade && answer.trim() ? aiGrade.isCorrect : exactMatch;
+
     return {
       question,
       card,
-      expected,
+      expected: question.expected,
       answer,
-      correct: normalizeAnswer(answer) === normalizeAnswer(expected),
+      correct,
+      aiFeedback: aiGrade?.feedback,
     };
   });
+
   const correctCount = results.filter((result) => result.correct).length;
   const wrongCards = results.filter((result) => !result.correct).map((result) => result.card);
 
@@ -97,8 +183,21 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : !questions.length ? (
         <div className="rounded-[28px] border bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-xl font-black">Tạo bài kiểm tra</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-black">Tạo bài kiểm tra</h2>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenGeminiSettings}
+              className="h-9 gap-1.5 rounded-xl text-xs font-bold"
+            >
+              <Settings2 size={14} />
+              {geminiActive ? `Gemini (${geminiModel})` : "Cài Gemini API Key"}
+            </Button>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StudyControl label="Số câu">
               <Input
                 type="number"
@@ -136,10 +235,48 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
                 <option value="vi-en">Vietnamese → English</option>
               </select>
             </StudyControl>
+            <StudyControl label="Công cụ đề & chấm">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!geminiActive) {
+                    onOpenGeminiSettings();
+                    return;
+                  }
+                  setUseAiEngine((prev) => !prev);
+                }}
+                className={`flex h-10 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-black transition ${
+                  useAiEngine && geminiActive
+                    ? "border-[#6366f1] bg-indigo-50 text-[#6366f1]"
+                    : "bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Sparkles size={14} />
+                {geminiActive
+                  ? useAiEngine
+                    ? "Gia sư Gemini AI"
+                    : "Tiêu chuẩn (Tắt AI)"
+                  : "Bật Gemini AI"}
+              </button>
+            </StudyControl>
           </div>
-          <Button onClick={() => createTest()} className="mt-6 w-full sm:w-auto">
-            Bắt đầu làm bài
-            <ChevronRight />
+
+          <Button
+            disabled={generating}
+            onClick={() => void createTest()}
+            className="mt-6 w-full sm:w-auto"
+          >
+            {generating ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Gemini đang soạn đề...
+              </>
+            ) : (
+              <>
+                Bắt đầu làm bài
+                <ChevronRight />
+              </>
+            )}
           </Button>
         </div>
       ) : submitted ? (
@@ -153,6 +290,34 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
               {correctCount} đúng · {questions.length - correctCount} sai
             </p>
           </div>
+
+          {aiSummary && (
+            <div className="rounded-[24px] border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-violet-50/50 p-5 shadow-xs">
+              <div className="mb-2 flex items-center gap-2 text-xs font-black tracking-wider text-[#6366f1] uppercase">
+                <Sparkles size={15} />
+                <span>Nhận xét từ Gia sư Gemini ({geminiModel})</span>
+              </div>
+              <p className="text-sm leading-relaxed font-semibold text-slate-800">
+                {aiSummary.overallFeedback}
+              </p>
+              {aiSummary.weakAreas.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-500">Cần ôn kỹ:</span>
+                  {aiSummary.weakAreas.map((area) => (
+                    <span
+                      key={area}
+                      className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800"
+                    >
+                      {area}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-3 rounded-xl bg-white/80 p-3 text-xs font-semibold text-indigo-800">
+                💡 Mẹo học: {aiSummary.nextTip}
+              </p>
+            </div>
+          )}
 
           {results.map((result, index) => (
             <div
@@ -169,10 +334,8 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
                 >
                   {index + 1}
                 </span>
-                <div>
-                  <p className="font-black">
-                    {questionFor(result.card, result.question.direction)}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black">{result.question.prompt}</p>
                   <p className="mt-2 text-sm text-slate-500">
                     Bạn trả lời:{" "}
                     <b className={result.correct ? "text-emerald-700" : "text-red-600"}>
@@ -184,6 +347,11 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
                       Đáp án đúng: <b className="text-emerald-700">{result.expected}</b>
                     </p>
                   )}
+                  {(result.aiFeedback || result.question.explanation) && (
+                    <p className="mt-2 rounded-xl bg-slate-50 p-2.5 text-xs font-medium text-slate-600">
+                      💡 {result.aiFeedback || result.question.explanation}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -192,8 +360,8 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
           <div className="grid gap-2 sm:grid-cols-3">
             <Button
               variant="outline"
-              disabled={!wrongCards.length}
-              onClick={() => createTest(wrongCards)}
+              disabled={!wrongCards.length || generating}
+              onClick={() => void createTest(wrongCards)}
             >
               Kiểm tra lại câu sai
             </Button>
@@ -202,6 +370,7 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
               onClick={() => {
                 setQuestions([]);
                 setSubmitted(false);
+                setAiSummary(null);
               }}
             >
               Tạo bài mới
@@ -228,67 +397,72 @@ export function TestMode({ cards, title, onBack, onBatchReview }: TestModeProps)
           </div>
         </div>
       ) : (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setSubmitted(true);
-          }}
-          className="space-y-4"
-        >
-          {questions.map((question, index) => {
-            const card = cards.find((candidate) => candidate.id === question.cardId)!;
-            return (
-              <div
-                key={question.key}
-                className="rounded-[24px] border bg-white p-5 shadow-sm sm:p-6"
-              >
-                <p className="text-xs font-black text-[#6c63ff]">
-                  CÂU {index + 1} ·{" "}
-                  {question.kind === "multiple-choice" ? "TRẮC NGHIỆM" : "GÕ ĐÁP ÁN"}
+        <form onSubmit={(event) => void handleSubmitTest(event)} className="space-y-4">
+          {questions.map((question, index) => (
+            <div
+              key={question.key}
+              className="rounded-[24px] border bg-white p-5 shadow-sm sm:p-6"
+            >
+              <p className="flex items-center gap-1.5 text-xs font-black text-[#6c63ff]">
+                {testUsedAi && <Sparkles size={13} />}
+                CÂU {index + 1} ·{" "}
+                {question.kind === "multiple-choice" ? "TRẮC NGHIỆM" : "GÕ ĐÁP ÁN"}
+              </p>
+              <h3 className="my-4 text-xl font-black">{question.prompt}</h3>
+              {question.hint && (
+                <p className="mb-4 text-xs font-semibold text-indigo-600">
+                  Gợi ý: {question.hint}
                 </p>
-                <h3 className="my-5 text-xl font-black">
-                  {questionFor(card, question.direction)}
-                </h3>
-                {question.kind === "multiple-choice" ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {question.choices.map((choice) => (
-                      <label
-                        key={choice}
-                        className={`cursor-pointer rounded-xl border p-3 font-semibold ${
-                          answers[question.key] === choice
-                            ? "border-[#6c63ff] bg-[#f0efff]"
-                            : "bg-white"
-                        }`}
-                      >
-                        <input
-                          className="mr-2"
-                          type="radio"
-                          name={question.key}
-                          checked={answers[question.key] === choice}
-                          onChange={() =>
-                            setAnswers((current) => ({ ...current, [question.key]: choice }))
-                          }
-                        />
-                        {choice}
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <Input
-                    value={answers[question.key] || ""}
-                    onChange={(event) =>
-                      setAnswers((current) => ({
-                        ...current,
-                        [question.key]: event.target.value,
-                      }))
-                    }
-                    placeholder="Nhập câu trả lời..."
-                  />
-                )}
-              </div>
-            );
-          })}
-          <Button className="h-12 w-full">Nộp bài</Button>
+              )}
+
+              {question.kind === "multiple-choice" ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {question.choices.map((choice) => (
+                    <label
+                      key={choice}
+                      className={`cursor-pointer rounded-xl border p-3 font-semibold ${
+                        answers[question.key] === choice
+                          ? "border-[#6c63ff] bg-[#f0efff]"
+                          : "bg-white"
+                      }`}
+                    >
+                      <input
+                        className="mr-2"
+                        type="radio"
+                        name={question.key}
+                        checked={answers[question.key] === choice}
+                        onChange={() =>
+                          setAnswers((current) => ({ ...current, [question.key]: choice }))
+                        }
+                      />
+                      {choice}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <Input
+                  value={answers[question.key] || ""}
+                  onChange={(event) =>
+                    setAnswers((current) => ({
+                      ...current,
+                      [question.key]: event.target.value,
+                    }))
+                  }
+                  placeholder="Nhập câu trả lời..."
+                />
+              )}
+            </div>
+          ))}
+          <Button disabled={grading} className="h-12 w-full">
+            {grading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Gemini đang chấm bài &amp; phân tích...
+              </>
+            ) : (
+              "Nộp bài"
+            )}
+          </Button>
         </form>
       )}
     </div>

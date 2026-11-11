@@ -13,7 +13,19 @@ export const STORAGE_KEYS = {
   NOTIF_CUSTOM_TIME: "lexilo_reminder_custom_time",
   NOTIF_LAST_DAILY_DATE: "lexilo_last_daily_date",
   NOTIF_CARD_IDS: "lexilo_notified_card_ids",
+  GEMINI_API_KEY: "lexilo_gemini_api_key",
+  GEMINI_MODEL: "lexilo_gemini_model",
+  GEMINI_ENABLED: "lexilo_gemini_enabled",
 } as const;
+
+export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";
+
+export const GEMINI_MODEL_OPTIONS = [
+  { value: "gemini-3.5-flash", label: "Gemini 3.5 Flash (Mặc định)" },
+  { value: "gemini-3.8-flash", label: "Gemini 3.8 Flash (Mới nhất)" },
+  { value: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Ổn định)" },
+] as const;
 
 export const DEFAULT_SUPABASE_CONFIG = {
   URL: "https://wbvxedcmkzzgpacnyvpx.supabase.co",
