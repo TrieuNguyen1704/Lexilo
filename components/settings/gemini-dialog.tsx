@@ -40,17 +40,17 @@ interface GeminiDialogProps {
 export function GeminiDialog(props: GeminiDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="max-h-[88vh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-2xl p-4 sm:p-6">
+      <DialogContent className="clay-card max-h-[88vh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-[28px] p-5 sm:p-6">
         <DialogHeader className="pb-2 text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 font-bold text-[#6366f1]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-[#6d28d9] shadow-[inset_0_1.5px_0_rgba(255,255,255,0.85)]">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold sm:text-lg">
+              <DialogTitle className="font-display text-lg font-bold text-slate-900">
                 Cấu hình Gemini AI
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs font-medium text-slate-600">
                 Trợ lý thông minh cho chế độ Learn, Kiểm tra &amp; Tạo thẻ
               </DialogDescription>
             </div>
@@ -138,22 +138,21 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
   return (
     <div className="space-y-4 py-1">
       {serverStatus.configured && !apiKey.trim() && (
-        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs font-semibold text-emerald-800">
+        <div className="flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/85 p-3 text-xs font-semibold text-emerald-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
           <span>
-            Hệ thống đã tích hợp sẵn <b>Gemini API Key</b> trên máy chủ (<code>.env</code>). Anh
+            Hệ thống đã tích hợp sẵn <b>Gemini API Key</b> trên máy chủ (<code>.env</code>). Bạn
             có thể kiểm tra hoặc dùng ngay mà không cần nhập lại!
           </span>
         </div>
       )}
 
-      {/* Enable Switch */}
-      <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/50 p-3.5">
+      <div className="clay-surface flex items-center justify-between gap-3 rounded-2xl p-3.5">
         <div>
-          <p className="text-xs font-bold text-slate-900 sm:text-sm">
+          <p className="text-xs font-extrabold text-slate-900 sm:text-sm">
             Bật Gia sư Gemini AI
           </p>
-          <p className="text-[11px] text-slate-600">
+          <p className="text-[11px] font-medium text-slate-600">
             Chấm nghĩa linh hoạt, tạo câu hỏi ngữ cảnh và giải thích lỗi sai
           </p>
         </div>
@@ -161,30 +160,30 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
           type="button"
           role="switch"
           aria-checked={enabled}
+          aria-label="Bật Gia sư Gemini AI"
           onClick={() => setEnabled((prev) => !prev)}
           className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-            enabled ? "bg-[#6366f1]" : "bg-slate-300"
+            enabled ? "bg-[#7c3aed]" : "bg-slate-300"
           }`}
         >
           <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition ${
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition ${
               enabled ? "translate-x-5" : "translate-x-0"
             }`}
           />
         </button>
       </div>
 
-      {/* API Key Input */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <label className="text-xs font-semibold text-foreground">
+          <label className="text-xs font-bold text-slate-700">
             {serverStatus.configured ? "API Key riêng (Tùy chọn ghi đè)" : "Gemini API Key"}
           </label>
           <a
             href="https://aistudio.google.com/apikey"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] font-bold text-[#6366f1] hover:underline"
+            className="text-[11px] font-extrabold text-[#6d28d9] hover:underline"
           >
             Lấy key tại AI Studio →
           </a>
@@ -192,7 +191,7 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
 
         <div className="relative flex items-center gap-1.5">
           <div className="relative flex-1">
-            <KeyRound className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+            <KeyRound className="absolute top-3 left-3.5 h-4 w-4 text-slate-400" />
             <Input
               type={showKey ? "text" : "password"}
               value={apiKey}
@@ -205,7 +204,7 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
                   ? "Đang dùng key bảo mật của hệ thống"
                   : "AIza... hoặc AQ..."
               }
-              className="h-10 w-full rounded-xl pr-9 pl-9 font-mono text-xs sm:text-sm"
+              className="h-10 w-full rounded-2xl border-[var(--border)] bg-white pr-10 pl-10 font-mono text-xs sm:text-sm"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
@@ -213,7 +212,7 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
             <button
               type="button"
               onClick={() => setShowKey((prev) => !prev)}
-              className="absolute top-2.5 right-2.5 p-0.5 text-slate-400 hover:text-slate-700"
+              className="absolute top-2 right-2 rounded-lg p-1 text-slate-500 hover:text-slate-800"
               aria-label={showKey ? "Ẩn API Key" : "Hiện API Key"}
             >
               {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -226,7 +225,8 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
               size="icon"
               onClick={handleClearKey}
               title="Xóa API Key trình duyệt"
-              className="h-10 w-10 shrink-0 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
+              aria-label="Xóa API Key trình duyệt"
+              className="h-10 w-10 shrink-0 rounded-2xl border-red-200 text-red-600 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -234,14 +234,13 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
         </div>
       </div>
 
-      {/* Model Selector */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <label className="text-xs font-semibold text-foreground">Mô hình Gemini</label>
+          <label className="text-xs font-bold text-slate-700">Mô hình Gemini</label>
           <button
             type="button"
             onClick={() => setCustomModelMode((prev) => !prev)}
-            className="text-[11px] font-bold text-[#6366f1] hover:underline"
+            className="text-[11px] font-extrabold text-[#6d28d9] hover:underline"
           >
             {customModelMode ? "Chọn từ danh sách" : "Tự nhập tên model"}
           </button>
@@ -255,7 +254,7 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
               setTestResult(null);
             }}
             placeholder="gemini-3.5-flash"
-            className="h-10 w-full rounded-xl font-mono text-xs sm:text-sm"
+            className="h-10 w-full rounded-2xl border-[var(--border)] bg-white font-mono text-xs sm:text-sm"
             autoCapitalize="none"
             autoCorrect="off"
           />
@@ -266,7 +265,8 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
               setModel(e.target.value);
               setTestResult(null);
             }}
-            className="h-10 w-full rounded-xl border border-input bg-background px-3 text-xs font-bold sm:text-sm"
+            aria-label="Chọn mô hình Gemini"
+            className="h-10 w-full rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3 text-xs font-bold text-slate-800 sm:text-sm"
           >
             {GEMINI_MODEL_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -277,10 +277,9 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
         )}
       </div>
 
-      {/* Test Result Banner */}
       {testResult && (
         <div
-          className={`flex items-start gap-2 rounded-xl p-3 text-xs font-semibold ${
+          className={`flex items-start gap-2 rounded-2xl p-3 text-xs font-bold ${
             testResult.ok
               ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
               : "border border-red-200 bg-red-50 text-red-700"
@@ -291,20 +290,18 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
         </div>
       )}
 
-      {/* Test Connection Button */}
       <Button
         type="button"
         variant="outline"
         onClick={handleTestConnection}
         disabled={testing || !hasAvailableKey}
-        className="h-10 w-full gap-2 rounded-xl text-xs font-bold"
+        className="tap-press h-10 w-full gap-2 rounded-2xl border-[var(--border)] bg-white text-xs font-extrabold text-slate-800"
       >
-        <PlugZap className="h-4 w-4 text-[#6366f1]" />
+        <PlugZap className="h-4 w-4 text-[#7c3aed]" />
         {testing ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối Gemini"}
       </Button>
 
-      {/* Security Note */}
-      <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] leading-relaxed text-muted-foreground">
+      <div className="clay-surface flex items-start gap-2 rounded-2xl p-3 text-[11px] leading-relaxed font-medium text-slate-600">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
         <span>
           Key hệ thống được lưu bảo mật trong biến môi trường máy chủ (không đẩy lên GitHub).
@@ -312,19 +309,19 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
         </span>
       </div>
 
-      <div className="flex justify-end gap-2 border-t pt-3">
+      <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-3">
         <Button
           type="button"
           variant="outline"
           onClick={() => onOpenChange(false)}
-          className="h-9 rounded-xl text-xs"
+          className="h-9 rounded-2xl border-[var(--border)] text-xs font-bold"
         >
           Đóng
         </Button>
         <Button
           type="button"
           onClick={handleSave}
-          className="h-9 rounded-xl bg-[#6366f1] px-5 text-xs font-bold text-white hover:bg-[#4f46e5]"
+          className="clay-cta h-9 rounded-2xl bg-[#7c3aed] px-5 text-xs font-bold text-white hover:bg-[#6d28d9]"
         >
           Lưu cấu hình
         </Button>

@@ -86,8 +86,8 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
       ) : (
         <>
           <div className="mb-4 flex items-center gap-3">
-            <Progress value={(index / ids.length) * 100} />
-            <b className="text-sm whitespace-nowrap text-slate-500">
+            <Progress value={(index / ids.length) * 100} className="h-2.5 rounded-full" />
+            <b className="text-sm font-extrabold whitespace-nowrap text-slate-600">
               {index + 1} / {ids.length}
             </b>
           </div>
@@ -100,21 +100,21 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
             backAccentVariant="emerald"
             onFlip={() => setRevealed((value) => !value)}
             footerContent={
-              <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+              <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
                 <span>Nhấp thẻ hoặc bấm</span>
-                <kbd className="rounded border bg-slate-100 px-2 py-0.5 font-mono text-slate-700 shadow-2xs">
+                <kbd className="rounded-lg border border-[var(--border)] bg-[#f7f3fd] px-2 py-0.5 font-mono text-slate-700 shadow-2xs">
                   Space
                 </kbd>
                 <span>để hiện đáp án</span>
               </div>
             }
             backFooterContent={
-              <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-400">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500">
                 <span>Bấm phím số</span>
                 {["1", "2", "3", "4"].map((k) => (
                   <kbd
                     key={k}
-                    className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700"
+                    className="rounded-lg border border-[var(--border)] bg-[#f7f3fd] px-1.5 py-0.5 font-mono text-slate-700"
                   >
                     {k}
                   </kbd>
@@ -129,17 +129,17 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
               <div className="flex flex-col gap-2.5 sm:flex-row">
                 <Button
                   onClick={() => setRevealed(true)}
-                  className="h-14 flex-1 rounded-2xl bg-[#6c63ff] text-base font-black shadow-md hover:bg-[#5b52f5]"
+                  className="clay-cta h-14 flex-1 rounded-2xl bg-[#7c3aed] text-base font-extrabold text-white hover:bg-[#6d28d9]"
                 >
                   Hiện đáp án{" "}
-                  <kbd className="ml-2 rounded bg-white/20 px-2 py-0.5 font-mono text-xs">
+                  <kbd className="ml-2 rounded-lg bg-white/20 px-2 py-0.5 font-mono text-xs">
                     Space
                   </kbd>
                 </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-500">
+                <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-600">
                   <span>Đánh giá mức độ ghi nhớ:</span>
                   <span>Phím tắt [1 - 4]</span>
                 </div>
@@ -148,39 +148,39 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
             )}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-2xl border border-slate-200/60 bg-white/70 px-4 py-2.5 text-xs font-semibold text-slate-500 shadow-2xs">
+          <div className="clay-surface mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 Space
               </kbd>{" "}
               Lật thẻ
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 1
               </kbd>{" "}
               Quên
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 2
               </kbd>{" "}
               Khó
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 3
               </kbd>{" "}
               Tốt
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 4
               </kbd>{" "}
               Dễ
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 R
               </kbd>{" "}
               Nghe

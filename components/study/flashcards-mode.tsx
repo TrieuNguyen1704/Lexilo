@@ -168,26 +168,26 @@ export function FlashcardsMode({
   function renderDifficultFooter(hintText: string) {
     if (!card) return null;
     return (
-      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+      <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             void onToggleDifficult(card);
           }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition ${
+          className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition ${
             card.isDifficult
-              ? "bg-amber-100 text-amber-700"
-              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              ? "bg-amber-100 text-amber-800"
+              : "bg-[#f7f3fd] text-slate-600 hover:bg-violet-100/70"
           }`}
         >
-          <Flag size={14} />
+          <Flag size={14} className={card.isDifficult ? "fill-amber-400 text-amber-500" : ""} />
           {card.isDifficult ? "Đã đánh dấu Khó" : "Đánh dấu Khó"}
-          <kbd className="ml-1 font-mono text-[10px] opacity-60">[F]</kbd>
+          <kbd className="ml-1 font-mono text-[10px] opacity-65">[F]</kbd>
         </button>
-        <span className="text-xs font-bold text-slate-400">
+        <span className="text-xs font-bold text-slate-500">
           Bấm{" "}
-          <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600">
+          <kbd className="rounded-md border border-[var(--border)] bg-[#f7f3fd] px-1.5 py-0.5 font-mono text-slate-700">
             Space
           </kbd>{" "}
           {hintText}
@@ -204,7 +204,7 @@ export function FlashcardsMode({
         onBack={onBack}
       />
 
-      <div className="mb-4 grid gap-2 rounded-2xl border bg-white p-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="clay-card mb-4 grid gap-2.5 rounded-3xl p-3.5 sm:grid-cols-2 lg:grid-cols-4">
         <StudyControl label="Mặt trước">
           <select
             value={direction}
@@ -212,7 +212,8 @@ export function FlashcardsMode({
               setDirection(event.target.value as Direction);
               setFlipped(false);
             }}
-            className="h-9 w-full rounded-lg border bg-white px-2 text-sm font-semibold"
+            aria-label="Chiều hiển thị"
+            className="h-10 w-full rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-2.5 text-xs font-bold text-slate-800"
           >
             <option value="en-vi">English → Vietnamese</option>
             <option value="vi-en">Vietnamese → English</option>
@@ -236,29 +237,47 @@ export function FlashcardsMode({
           onBack={onBack}
         />
       ) : done ? (
-        <div className="rounded-[28px] border bg-white p-7 text-center shadow-sm">
-          <Check className="mx-auto text-[#17a673]" size={54} />
-          <h2 className="mt-4 text-2xl font-black">Đã xem hết {ids.length} thẻ</h2>
-          <p className="mt-2 text-slate-500">Bạn có thể học lại ngay mà không cần chờ đến hạn.</p>
-          <div className="mt-6 grid gap-2 sm:grid-cols-2">
-            <Button onClick={() => restart(false, false)}>
-              <RotateCcw />
+        <div className="clay-card rounded-[32px] p-8 text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-100 text-[#047857]">
+            <Check size={32} strokeWidth={2.75} />
+          </span>
+          <h2 className="font-display mt-4 text-2xl font-bold text-slate-900">
+            Đã xem hết {ids.length} thẻ
+          </h2>
+          <p className="mt-2 text-sm font-medium text-slate-600">
+            Bạn có thể học lại ngay mà không cần chờ đến hạn.
+          </p>
+          <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+            <Button
+              onClick={() => restart(false, false)}
+              className="clay-cta h-11 rounded-2xl bg-[#7c3aed] font-bold text-white hover:bg-[#6d28d9]"
+            >
+              <RotateCcw size={16} />
               Học lại từ đầu
             </Button>
-            <Button variant="outline" onClick={() => restart(true, false)}>
-              <Shuffle />
+            <Button
+              variant="outline"
+              onClick={() => restart(true, false)}
+              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold"
+            >
+              <Shuffle size={16} />
               Xáo trộn và học lại
             </Button>
             <Button
               variant="outline"
               disabled={!cards.some((item) => item.isDifficult)}
               onClick={() => restart(randomOrder, true)}
+              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold"
             >
-              <Flag />
+              <Flag size={16} />
               Chỉ học thẻ khó
             </Button>
-            <Button variant="outline" onClick={onBack}>
-              <ChevronLeft />
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold"
+            >
+              <ChevronLeft size={16} />
               Trở về bộ thẻ
             </Button>
           </div>
@@ -266,8 +285,8 @@ export function FlashcardsMode({
       ) : card ? (
         <>
           <div className="mb-3 flex items-center gap-3">
-            <Progress value={((safeIndex + 1) / ids.length) * 100} />
-            <b className="text-sm whitespace-nowrap text-slate-500">
+            <Progress value={((safeIndex + 1) / ids.length) * 100} className="h-2.5 rounded-full" />
+            <b className="text-sm font-extrabold whitespace-nowrap text-slate-600">
               {safeIndex + 1} / {ids.length}
             </b>
           </div>
@@ -288,68 +307,71 @@ export function FlashcardsMode({
 
           {recordFsrs && flipped && (
             <div className="mt-4">
-              <p className="mb-2 text-center text-xs font-bold text-amber-700">
+              <p className="mb-2 text-center text-xs font-bold text-amber-800">
                 Lựa chọn dưới đây sẽ cập nhật lịch FSRS (Phím tắt 1 - 4).
               </p>
               <RatingButtons onRate={(r) => void rate(r)} disabled={busy} />
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
             <Button
               variant="outline"
               disabled={safeIndex === 0}
               onClick={previous}
-              className="rounded-xl"
+              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold text-slate-700"
             >
-              <ArrowLeft /> Thẻ trước{" "}
+              <ArrowLeft size={16} /> Thẻ trước{" "}
               <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">←</kbd>
             </Button>
             <Button
               variant="outline"
               onClick={() => restart(true, onlyDifficult)}
-              className="rounded-xl"
+              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold text-slate-700"
             >
-              <Shuffle /> Xáo trộn
+              <Shuffle size={16} /> Xáo trộn
             </Button>
-            <Button onClick={next} className="rounded-xl">
+            <Button
+              onClick={next}
+              className="clay-cta h-11 rounded-2xl bg-[#7c3aed] font-bold text-white hover:bg-[#6d28d9]"
+            >
               Tiếp theo{" "}
               <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">→</kbd>{" "}
-              <ArrowRight />
+              <ArrowRight size={16} />
             </Button>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-2xl border border-slate-200/60 bg-white/70 px-4 py-2.5 text-xs font-semibold text-slate-500 shadow-2xs">
+          <div className="clay-surface mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 Space
               </kbd>{" "}
               Lật
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 ←
               </kbd>
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 →
               </kbd>{" "}
               Chuyển thẻ
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 R
               </kbd>{" "}
               Phát âm
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+              <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 F
               </kbd>{" "}
               Đánh dấu Khó
             </span>
             {recordFsrs && (
               <span className="flex items-center gap-1">
-                <kbd className="rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
+                <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                   1-4
                 </kbd>{" "}
                 Đánh giá

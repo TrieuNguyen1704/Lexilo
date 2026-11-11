@@ -116,12 +116,12 @@ export function ImportPanel({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="text-3xl font-black">Nhập bộ thẻ nhanh</h1>
-      <p className="mt-2 text-slate-500">
+      <h1 className="font-display text-3xl font-bold text-slate-900">Nhập bộ thẻ nhanh</h1>
+      <p className="mt-1.5 text-sm font-semibold text-slate-600">
         Dán nhiều dòng hoặc nhờ Gemini AI / AI local tạo bản xem trước.
       </p>
 
-      <div className="mt-6 rounded-[26px] border bg-white p-5 shadow-sm sm:p-6">
+      <div className="clay-card mt-6 rounded-[28px] p-5 sm:p-6">
         <Tabs
           value={mode}
           onValueChange={(value) => {
@@ -129,62 +129,82 @@ export function ImportPanel({
             setAiPreview([]);
           }}
         >
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pairs">Từ &amp; nghĩa</TabsTrigger>
-            <TabsTrigger value="cloze">Điền khuyết</TabsTrigger>
-            <TabsTrigger value="ai">AI tạo thẻ</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-[#f4eeff] p-1.5">
+            <TabsTrigger value="pairs" className="rounded-xl py-2 text-xs font-extrabold sm:text-sm">
+              Từ &amp; nghĩa
+            </TabsTrigger>
+            <TabsTrigger value="cloze" className="rounded-xl py-2 text-xs font-extrabold sm:text-sm">
+              Điền khuyết
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="rounded-xl py-2 text-xs font-extrabold sm:text-sm">
+              AI tạo thẻ
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pairs">
-            <p className="my-4 text-sm text-slate-500">
-              Mỗi dòng: <b>English | IPA | Part of speech | Vietnamese meaning | English example</b>
+            <p className="my-4 text-sm font-medium text-slate-600">
+              Mỗi dòng:{" "}
+              <b className="text-slate-800">
+                English | IPA | Part of speech | Vietnamese meaning | English example
+              </b>
               . Có thể dùng Tab thay cho dấu |.
             </p>
             <Textarea
               value={bulk}
               onChange={(event) => setBulk(event.target.value)}
-              className="min-h-64 rounded-2xl text-base"
+              className="min-h-64 rounded-2xl border-[var(--border)] bg-white text-base"
               placeholder="resilient | /rɪˈzɪliənt/ | adjective | kiên cường | She remained resilient after the setback."
             />
           </TabsContent>
 
           <TabsContent value="cloze">
-            <p className="my-4 text-sm text-slate-500">
+            <p className="my-4 text-sm font-medium text-slate-600">
               Dán đoạn văn tiếng Anh. Thẻ điền khuyết sẽ để trống IPA và từ loại.
             </p>
             <Textarea
               value={bulk}
               onChange={(event) => setBulk(event.target.value)}
-              className="min-h-64 rounded-2xl text-base"
+              className="min-h-64 rounded-2xl border-[var(--border)] bg-white text-base"
               placeholder="Paste an English paragraph here..."
             />
           </TabsContent>
 
           <TabsContent value="ai">
             <div
-              className={`my-4 flex flex-wrap items-center justify-between gap-2 rounded-xl p-3 text-sm font-bold ${
+              className={`my-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3.5 text-sm font-bold ${
                 geminiActive
-                  ? "bg-indigo-50 text-indigo-700"
+                  ? "border-violet-200 bg-violet-50/80 text-[#5b21b6]"
                   : ollamaAvailable
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-amber-50 text-amber-700"
+                  ? "border-emerald-200 bg-emerald-50/80 text-emerald-800"
+                  : "border-amber-200 bg-amber-50/80 text-amber-900"
               }`}
             >
-              <span>
-                {geminiActive
-                  ? `● Đang dùng Gemini (${geminiModel}) trực tuyến`
-                  : ollamaAvailable
-                  ? "● Ollama local đang kết nối"
-                  : "○ Chưa bật Gemini API Key (hoặc Ollama) — hãy cài API Key để dùng AI"}
+              <span className="flex items-center gap-2">
+                <span
+                  className={`size-2.5 shrink-0 rounded-full ${
+                    geminiActive
+                      ? "bg-[#7c3aed]"
+                      : ollamaAvailable
+                      ? "bg-emerald-500"
+                      : "bg-amber-500"
+                  }`}
+                />
+                <span>
+                  {geminiActive
+                    ? `Đang dùng Gemini (${geminiModel}) trực tuyến`
+                    : ollamaAvailable
+                    ? "Ollama local đang kết nối"
+                    : "Chưa bật Gemini API Key (hoặc Ollama) — hãy cài API Key để dùng AI"}
+                </span>
               </span>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={onOpenGeminiSettings}
-                className="h-8 gap-1 rounded-lg bg-white text-xs font-bold text-slate-700"
+                className="h-9 gap-1.5 rounded-xl border-[var(--border)] bg-white text-xs font-extrabold text-slate-700 hover:border-violet-300"
               >
-                <Settings2 size={13} />
+                <Settings2 size={14} />
                 {geminiActive ? "Đổi Gemini Key" : "Cài Gemini API Key"}
               </Button>
             </div>
@@ -194,7 +214,7 @@ export function ImportPanel({
                 setBulk(event.target.value);
                 setAiPreview([]);
               }}
-              className="min-h-52 rounded-2xl text-base"
+              className="min-h-52 rounded-2xl border-[var(--border)] bg-white text-base"
               placeholder="Dán bài đọc hoặc chủ đề. AI sẽ tạo từ, IPA, từ loại, nghĩa và ví dụ để bạn duyệt..."
             />
           </TabsContent>
@@ -204,7 +224,8 @@ export function ImportPanel({
           <select
             value={selectedDeckId}
             onChange={(event) => onSelectDeckId(event.target.value)}
-            className="h-11 min-w-0 rounded-xl border bg-white px-3 font-semibold"
+            aria-label="Chọn bộ thẻ đích"
+            className="h-11 min-w-0 rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3.5 text-sm font-bold text-slate-800"
           >
             {decks.map((deck) => (
               <option key={deck.id} value={deck.id}>
@@ -217,18 +238,18 @@ export function ImportPanel({
             <Button
               disabled={aiBusy || !bulk.trim()}
               onClick={handleGenerateAi}
-              className="h-11 rounded-xl bg-[#ff6b4a] px-6 font-bold text-white hover:bg-[#eb5737]"
+              className="clay-cta h-11 rounded-2xl bg-[#7c3aed] px-6 font-bold text-white hover:bg-[#6d28d9]"
             >
-              <Sparkles />
+              <Sparkles size={16} />
               {aiBusy ? "AI đang tạo..." : "Tạo bản xem trước"}
             </Button>
           ) : (
             <Button
               disabled={!parsedCount}
               onClick={handleImport}
-              className="h-11 rounded-xl bg-[#ff6b4a] px-6 font-bold text-white hover:bg-[#eb5737]"
+              className="clay-cta h-11 rounded-2xl bg-[#047857] px-6 font-bold text-white hover:bg-[#065f46]"
             >
-              <Sparkles />
+              <Sparkles size={16} />
               Tạo {parsedCount} thẻ
             </Button>
           )}

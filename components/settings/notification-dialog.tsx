@@ -45,17 +45,17 @@ interface NotificationDialogProps {
 export function NotificationDialog(props: NotificationDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="max-h-[88vh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-2xl p-4 sm:p-6">
+      <DialogContent className="clay-card max-h-[88vh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-[28px] p-5 sm:p-6">
         <DialogHeader className="pb-2 text-left">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 font-bold text-[#ff6b4a] dark:bg-orange-950/50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-[#e04826] shadow-[inset_0_1.5px_0_rgba(255,255,255,0.85)]">
               <Bell className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold sm:text-lg">
+              <DialogTitle className="font-display text-lg font-bold text-slate-900">
                 Cài đặt thông báo ôn tập
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
+              <DialogDescription className="text-xs font-medium text-slate-600">
                 Tùy chỉnh thông báo tức thì và nhắc nhở theo giờ bạn muốn
               </DialogDescription>
             </div>
@@ -133,7 +133,7 @@ function NotificationBody({
     setTesting(true);
     try {
       const sent = await sendNotification(
-        "Kiểm tra thông báo Lexilo! 🔔",
+        "Kiểm tra thông báo Lexilo",
         `Hệ thống hoạt động tốt. Hiện bạn có ${dueCount} thẻ cần ôn tập.`,
       );
       if (sent) {
@@ -152,11 +152,11 @@ function NotificationBody({
     <>
       <div className="space-y-4 py-1">
         {status === "granted" && enabled ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 sm:p-3.5 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/85 p-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-emerald-500" />
-                <p className="text-xs font-bold text-emerald-950 sm:text-sm dark:text-emerald-200">
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-emerald-600" />
+                <p className="text-xs font-extrabold text-emerald-950 sm:text-sm">
                   Đã cấp quyền thông báo
                 </p>
               </div>
@@ -164,14 +164,14 @@ function NotificationBody({
             </div>
           </div>
         ) : status === "denied" ? (
-          <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/85 p-3.5">
             <div className="flex items-center gap-2">
               <BellOff className="h-4 w-4 shrink-0 text-rose-600" />
-              <p className="text-xs font-bold text-rose-950 dark:text-rose-200">
+              <p className="text-xs font-extrabold text-rose-950">
                 Quyền thông báo đang bị tắt
               </p>
             </div>
-            <p className="mt-1 text-[11px] text-rose-700 dark:text-rose-400">
+            <p className="mt-1 text-[11px] font-medium text-rose-700">
               Vào <strong>Cài đặt iPhone</strong> → <strong>Thông báo</strong> →{" "}
               <strong>Lexilo</strong> → bật <strong>Cho phép thông báo</strong>.
             </p>
@@ -179,23 +179,23 @@ function NotificationBody({
         ) : (
           <Button
             onClick={handleRequestPermission}
-            className="h-11 w-full gap-2 rounded-xl bg-[#ff6b4a] text-xs font-bold text-white shadow-sm hover:bg-[#e85a39] sm:text-sm"
+            className="clay-cta h-11 w-full gap-2 rounded-2xl bg-[#7c3aed] text-xs font-bold text-white hover:bg-[#6d28d9] sm:text-sm"
           >
             <Bell className="h-4 w-4" /> Bật thông báo ngay
           </Button>
         )}
 
-        <div className="space-y-2 rounded-xl border border-border bg-card p-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-100 font-bold text-[#ff6b4a]">
+        <div className="clay-surface space-y-2 rounded-2xl p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-[#e04826]">
                 <Zap className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-foreground sm:text-sm">
+                <p className="text-xs font-extrabold text-slate-900 sm:text-sm">
                   1. Thông báo tức thì khi có thẻ đến hạn
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] font-medium text-slate-600">
                   Bắn thông báo ngay khi có thẻ vừa đến hạn FSRS
                 </p>
               </div>
@@ -203,28 +203,29 @@ function NotificationBody({
 
             <ToggleSwitch
               checked={realtimeEnabled}
+              label="Thông báo tức thì"
               onToggle={handleToggleRealtime}
-              activeClass="bg-[#ff6b4a]"
+              activeClass="bg-[#7c3aed]"
             />
           </div>
-          <p className="pl-9 text-[11px] text-muted-foreground">
+          <p className="pl-10 text-[11px] font-medium text-slate-600">
             {realtimeEnabled
-              ? "🟢 Đang bật: Cứ khi nào có từ vựng đến hạn học lại là điện thoại sẽ báo ngay."
-              : "⚪ Đang tắt: Sẽ không báo đột xuất trong ngày."}
+              ? "Đang bật: Khi có từ vựng đến hạn học lại, thiết bị sẽ báo ngay."
+              : "Đang tắt: Sẽ không báo đột xuất trong ngày."}
           </p>
         </div>
 
-        <div className="space-y-3 rounded-xl border border-border bg-card p-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 font-bold text-blue-600">
+        <div className="clay-surface space-y-3 rounded-2xl p-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-[#6d28d9]">
                 <Clock className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-foreground sm:text-sm">
+                <p className="text-xs font-extrabold text-slate-900 sm:text-sm">
                   2. Nhắc nhở cố định mỗi ngày
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] font-medium text-slate-600">
                   Tự đặt giờ cố định để nhắc tổng hợp thẻ cần học
                 </p>
               </div>
@@ -232,15 +233,16 @@ function NotificationBody({
 
             <ToggleSwitch
               checked={dailyEnabled}
+              label="Nhắc nhở cố định mỗi ngày"
               onToggle={handleToggleDaily}
-              activeClass="bg-blue-600"
+              activeClass="bg-[#7c3aed]"
             />
           </div>
 
           {dailyEnabled && (
-            <div className="space-y-2.5 pt-1 pl-9">
+            <div className="space-y-2.5 pt-1 pl-10">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-foreground">
+                <label className="mb-1 block text-xs font-bold text-slate-700">
                   Nhập hoặc chọn giờ bạn muốn nhắc:
                 </label>
                 <div className="flex items-center gap-2">
@@ -248,26 +250,27 @@ function NotificationBody({
                     type="time"
                     value={customTime}
                     onChange={(e) => handleTimeChange(e.target.value)}
-                    className="h-10 w-36 rounded-xl border-[#6c63ff]/30 text-center text-sm font-bold"
+                    aria-label="Giờ nhắc nhở"
+                    className="h-10 w-36 rounded-2xl border-[var(--border)] bg-white text-center text-sm font-bold"
                   />
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs font-medium text-slate-600">
                     (Hàng ngày lúc <strong>{customTime}</strong>)
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-[11px] text-muted-foreground">Chọn nhanh mốc giờ phổ biến:</p>
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold text-slate-600">Chọn nhanh mốc giờ phổ biến:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {POPULAR_REMINDER_TIMES.map((timeStr) => (
                     <button
                       key={timeStr}
                       type="button"
                       onClick={() => handleTimeChange(timeStr)}
-                      className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                      className={`rounded-xl border px-2.5 py-1 text-xs font-bold transition ${
                         customTime === timeStr
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-border bg-muted/40 text-foreground hover:bg-muted"
+                          ? "border-[#7c3aed] bg-[#7c3aed] text-white"
+                          : "border-[var(--border)] bg-white text-slate-700 hover:bg-violet-50"
                       }`}
                     >
                       {timeStr}
@@ -284,25 +287,25 @@ function NotificationBody({
             variant="outline"
             onClick={handleTestNotification}
             disabled={testing}
-            className="mt-1 h-10 w-full gap-2 rounded-xl text-xs"
+            className="tap-press mt-1 h-10 w-full gap-2 rounded-2xl border-[var(--border)] bg-white text-xs font-extrabold text-slate-800"
           >
-            <Send className="h-3.5 w-3.5 text-[#ff6b4a]" />
+            <Send className="h-3.5 w-3.5 text-[#7c3aed]" />
             {testing ? "Đang gửi..." : "Gửi thử 1 thông báo để kiểm tra chuông"}
           </Button>
         )}
 
-        <div className="flex items-center gap-2 rounded-xl bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
-          <Smartphone className="h-4 w-4 shrink-0 text-slate-500" />
+        <div className="flex items-center gap-2 rounded-2xl bg-violet-50/70 p-3 text-[11px] font-medium text-slate-600">
+          <Smartphone className="h-4 w-4 shrink-0 text-[#6d28d9]" />
           <span>Mẹo: Icon Lexilo ngoài Màn hình chính sẽ có chấm đỏ đếm số từ cần học.</span>
         </div>
       </div>
 
-      <div className="flex justify-end border-t pt-2">
+      <div className="flex justify-end border-t border-[var(--border)] pt-3">
         <Button
           size="sm"
           variant="outline"
           onClick={() => onOpenChange(false)}
-          className="h-8 rounded-lg text-xs"
+          className="h-9 rounded-2xl border-[var(--border)] text-xs font-bold"
         >
           Đóng
         </Button>
@@ -313,10 +316,12 @@ function NotificationBody({
 
 function ToggleSwitch({
   checked,
+  label,
   onToggle,
   activeClass,
 }: {
   checked: boolean;
+  label: string;
   onToggle: () => void;
   activeClass: string;
 }) {
@@ -325,13 +330,14 @@ function ToggleSwitch({
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-        checked ? activeClass : "bg-slate-300 dark:bg-slate-700"
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+        checked ? activeClass : "bg-slate-300"
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
           checked ? "translate-x-5" : "translate-x-0"
         }`}
       />

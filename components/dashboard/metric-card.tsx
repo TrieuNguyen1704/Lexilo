@@ -11,16 +11,18 @@ interface MetricCardProps {
 
 export function MetricCard({ icon: Icon, label, value, color }: MetricCardProps) {
   return (
-    <div className="tap-press flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+    <div className="clay-card-interactive flex items-center gap-4 rounded-3xl p-4 sm:p-5">
       <span
-        className="grid size-12 shrink-0 place-items-center rounded-2xl shadow-xs"
-        style={{ background: `${color}15`, color }}
+        className="grid size-12 shrink-0 place-items-center rounded-2xl shadow-[inset_0_2px_0_rgba(255,255,255,0.75)]"
+        style={{ background: `${color}18`, color }}
       >
-        <Icon size={22} className="stroke-[2.5]" />
+        <Icon size={22} strokeWidth={2.4} />
       </span>
       <div className="min-w-0">
-        <b className="block text-2xl font-black tracking-tight text-slate-900">{value}</b>
-        <span className="block truncate text-xs font-semibold text-slate-500 sm:text-sm">
+        <b className="font-display block text-2xl font-bold tracking-tight text-slate-900 sm:text-[28px]">
+          {value}
+        </b>
+        <span className="block truncate text-xs font-bold text-slate-600 sm:text-sm">
           {label}
         </span>
       </div>

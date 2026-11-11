@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Loader2, Settings2, Sparkles } from "lucide-react";
+import { ChevronRight, Lightbulb, Loader2, Settings2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -189,15 +189,15 @@ export function TestMode({
       {!cards.length ? (
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : !questions.length ? (
-        <div className="rounded-[28px] border bg-white p-6 shadow-sm sm:p-8">
+        <div className="clay-card rounded-[30px] p-6 sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-black">Tạo bài kiểm tra</h2>
+            <h2 className="font-display text-2xl font-bold text-slate-900">Tạo bài kiểm tra</h2>
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={onOpenGeminiSettings}
-              className="h-9 gap-1.5 rounded-xl text-xs font-bold"
+              className="h-9 gap-1.5 rounded-2xl border-[var(--border)] bg-white text-xs font-extrabold text-slate-700"
             >
               <Settings2 size={14} />
               {geminiActive ? `Gemini (${geminiModel})` : "Cài Gemini API Key"}
@@ -214,6 +214,7 @@ export function TestMode({
                 onChange={(event) =>
                   setCount(Math.max(1, Math.min(cards.length, Number(event.target.value) || 1)))
                 }
+                className="h-10 rounded-2xl border-[var(--border)] bg-white font-bold"
               />
             </StudyControl>
             <StudyControl label="Dạng câu hỏi">
@@ -222,7 +223,8 @@ export function TestMode({
                 onChange={(event) =>
                   setKindChoice(event.target.value as QuestionKind | "mixed")
                 }
-                className="h-10 rounded-lg border bg-white px-2"
+                aria-label="Dạng câu hỏi"
+                className="h-10 rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3 text-sm font-bold text-slate-800"
               >
                 <option value="mixed">Kết hợp</option>
                 <option value="multiple-choice">Trắc nghiệm</option>
@@ -235,7 +237,8 @@ export function TestMode({
                 onChange={(event) =>
                   setDirectionChoice(event.target.value as DirectionChoice)
                 }
-                className="h-10 rounded-lg border bg-white px-2"
+                aria-label="Chiều hỏi"
+                className="h-10 rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3 text-sm font-bold text-slate-800"
               >
                 <option value="both">Cả hai</option>
                 <option value="en-vi">English → Vietnamese</option>
@@ -252,10 +255,10 @@ export function TestMode({
                   }
                   setAiEngineOverride(!useAiEngine);
                 }}
-                className={`flex h-10 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-black transition ${
+                className={`tap-press flex h-10 items-center justify-center gap-1.5 rounded-2xl border-[1.5px] px-3 text-xs font-extrabold transition ${
                   useAiEngine && geminiActive
-                    ? "border-[#6366f1] bg-indigo-50 text-[#6366f1]"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
+                    ? "border-violet-300 bg-violet-50 text-[#6d28d9]"
+                    : "border-[var(--border)] bg-white text-slate-600 hover:bg-violet-50/40"
                 }`}
               >
                 <Sparkles size={14} />
@@ -271,7 +274,7 @@ export function TestMode({
           <Button
             disabled={generating}
             onClick={() => void createTest()}
-            className="mt-6 w-full sm:w-auto"
+            className="clay-cta mt-6 h-12 w-full rounded-2xl bg-[#7c3aed] px-6 font-extrabold text-white hover:bg-[#6d28d9] sm:w-auto"
           >
             {generating ? (
               <>
@@ -281,26 +284,28 @@ export function TestMode({
             ) : (
               <>
                 Bắt đầu làm bài
-                <ChevronRight />
+                <ChevronRight size={18} />
               </>
             )}
           </Button>
         </div>
       ) : submitted ? (
         <div className="space-y-4">
-          <div className="rounded-[28px] bg-gradient-to-br from-[#6c63ff] to-[#5148df] p-7 text-center text-white shadow-lg">
-            <p className="text-sm font-bold text-indigo-100">KẾT QUẢ</p>
-            <p className="mt-2 text-5xl font-black">
+          <div className="rounded-[30px] border border-violet-400/40 bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-7 text-center text-white shadow-[0_18px_36px_-10px_rgba(109,40,217,0.42),inset_0_2px_0_rgba(255,255,255,0.28)]">
+            <p className="text-xs font-extrabold tracking-widest text-violet-100 uppercase">
+              Kết quả bài kiểm tra
+            </p>
+            <p className="font-display mt-2 text-5xl font-bold">
               {Math.round((correctCount / questions.length) * 100)}%
             </p>
-            <p className="mt-2">
+            <p className="mt-2 text-sm font-bold text-violet-100">
               {correctCount} đúng · {questions.length - correctCount} sai
             </p>
           </div>
 
           {aiSummary && (
-            <div className="rounded-[24px] border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-violet-50/50 p-5 shadow-xs">
-              <div className="mb-2 flex items-center gap-2 text-xs font-black tracking-wider text-[#6366f1] uppercase">
+            <div className="clay-card rounded-3xl border-violet-200 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/50 p-5">
+              <div className="mb-2 flex items-center gap-2 text-xs font-extrabold tracking-wider text-[#6d28d9] uppercase">
                 <Sparkles size={15} />
                 <span>Nhận xét từ Gia sư Gemini ({geminiModel})</span>
               </div>
@@ -309,19 +314,20 @@ export function TestMode({
               </p>
               {aiSummary.weakAreas.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-500">Cần ôn kỹ:</span>
+                  <span className="text-xs font-bold text-slate-600">Cần ôn kỹ:</span>
                   {aiSummary.weakAreas.map((area) => (
                     <span
                       key={area}
-                      className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800"
+                      className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-extrabold text-amber-800"
                     >
                       {area}
                     </span>
                   ))}
                 </div>
               )}
-              <p className="mt-3 rounded-xl bg-white/80 p-3 text-xs font-semibold text-indigo-800">
-                💡 Mẹo học: {aiSummary.nextTip}
+              <p className="mt-3 flex items-start gap-2 rounded-2xl bg-white/90 p-3 text-xs font-bold text-[#5b21b6]">
+                <Lightbulb size={14} className="mt-0.5 shrink-0 text-[#7c3aed]" />
+                <span>Mẹo học: {aiSummary.nextTip}</span>
               </p>
             </div>
           )}
@@ -329,34 +335,37 @@ export function TestMode({
           {results.map((result, index) => (
             <div
               key={result.question.key}
-              className={`rounded-2xl border bg-white p-5 ${
+              className={`clay-card rounded-3xl p-5 ${
                 result.correct ? "border-emerald-200" : "border-red-200"
               }`}
             >
               <div className="flex gap-3">
                 <span
                   className={`grid size-7 shrink-0 place-items-center rounded-full text-sm font-black text-white ${
-                    result.correct ? "bg-emerald-500" : "bg-red-500"
+                    result.correct ? "bg-emerald-600" : "bg-red-600"
                   }`}
                 >
                   {index + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-black">{result.question.prompt}</p>
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className="font-display text-base font-bold text-slate-900">
+                    {result.question.prompt}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-600">
                     Bạn trả lời:{" "}
                     <b className={result.correct ? "text-emerald-700" : "text-red-600"}>
                       {result.answer || "(bỏ trống)"}
                     </b>
                   </p>
                   {!result.correct && (
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm font-medium text-slate-600">
                       Đáp án đúng: <b className="text-emerald-700">{result.expected}</b>
                     </p>
                   )}
                   {(result.aiFeedback || result.question.explanation) && (
-                    <p className="mt-2 rounded-xl bg-slate-50 p-2.5 text-xs font-medium text-slate-600">
-                      💡 {result.aiFeedback || result.question.explanation}
+                    <p className="clay-surface mt-2.5 flex items-start gap-2 rounded-2xl p-3 text-xs font-semibold text-slate-700">
+                      <Lightbulb size={14} className="mt-0.5 shrink-0 text-[#7c3aed]" />
+                      <span>{result.aiFeedback || result.question.explanation}</span>
                     </p>
                   )}
                 </div>
@@ -364,11 +373,12 @@ export function TestMode({
             </div>
           ))}
 
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-2.5 sm:grid-cols-3">
             <Button
               variant="outline"
               disabled={!wrongCards.length || generating}
               onClick={() => void createTest(wrongCards)}
+              className="h-11 rounded-2xl border-[var(--border)] bg-white font-bold"
             >
               Kiểm tra lại câu sai
             </Button>
@@ -379,6 +389,7 @@ export function TestMode({
                 setSubmitted(false);
                 setAiSummary(null);
               }}
+              className="h-11 rounded-2xl border-[var(--border)] bg-white font-bold"
             >
               Tạo bài mới
             </Button>
@@ -398,6 +409,7 @@ export function TestMode({
                   setSaving(false);
                 }
               }}
+              className="clay-cta h-11 rounded-2xl bg-[#047857] font-bold text-white hover:bg-[#065f46]"
             >
               {saved ? "Đã ghi vào FSRS" : saving ? "Đang ghi..." : "Ghi kết quả vào FSRS"}
             </Button>
@@ -406,45 +418,47 @@ export function TestMode({
       ) : (
         <form onSubmit={(event) => void handleSubmitTest(event)} className="space-y-4">
           {questions.map((question, index) => (
-            <div
-              key={question.key}
-              className="rounded-[24px] border bg-white p-5 shadow-sm sm:p-6"
-            >
-              <p className="flex items-center gap-1.5 text-xs font-black text-[#6c63ff]">
+            <div key={question.key} className="clay-card rounded-[28px] p-5 sm:p-6">
+              <p className="flex items-center gap-1.5 text-xs font-extrabold tracking-wide text-[#6d28d9]">
                 {testUsedAi && <Sparkles size={13} />}
                 CÂU {index + 1} ·{" "}
                 {question.kind === "multiple-choice" ? "TRẮC NGHIỆM" : "GÕ ĐÁP ÁN"}
               </p>
-              <h3 className="my-4 text-xl font-black">{question.prompt}</h3>
+              <h3 className="font-display my-4 text-xl font-bold text-slate-900">
+                {question.prompt}
+              </h3>
               {question.hint && (
-                <p className="mb-4 text-xs font-semibold text-indigo-600">
+                <p className="mb-4 text-xs font-bold text-[#6d28d9]">
                   Gợi ý: {question.hint}
                 </p>
               )}
 
               {question.kind === "multiple-choice" ? (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {question.choices.map((choice) => (
-                    <label
-                      key={choice}
-                      className={`cursor-pointer rounded-xl border p-3 font-semibold ${
-                        answers[question.key] === choice
-                          ? "border-[#6c63ff] bg-[#f0efff]"
-                          : "bg-white"
-                      }`}
-                    >
-                      <input
-                        className="mr-2"
-                        type="radio"
-                        name={question.key}
-                        checked={answers[question.key] === choice}
-                        onChange={() =>
-                          setAnswers((current) => ({ ...current, [question.key]: choice }))
-                        }
-                      />
-                      {choice}
-                    </label>
-                  ))}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {question.choices.map((choice) => {
+                    const checked = answers[question.key] === choice;
+                    return (
+                      <label
+                        key={choice}
+                        className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-2xl border-[1.5px] p-3.5 text-sm font-bold transition-all ${
+                          checked
+                            ? "border-[#7c3aed] bg-violet-50 text-[#5b21b6] shadow-xs"
+                            : "border-[var(--border)] bg-[#fdfbff] text-slate-800 hover:border-violet-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={question.key}
+                          checked={checked}
+                          onChange={() =>
+                            setAnswers((current) => ({ ...current, [question.key]: choice }))
+                          }
+                          className="accent-[#7c3aed]"
+                        />
+                        <span>{choice}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               ) : (
                 <Input
@@ -456,11 +470,15 @@ export function TestMode({
                     }))
                   }
                   placeholder="Nhập câu trả lời..."
+                  className="h-11 rounded-2xl border-[var(--border)] bg-white"
                 />
               )}
             </div>
           ))}
-          <Button disabled={grading} className="h-12 w-full">
+          <Button
+            disabled={grading}
+            className="clay-cta h-12 w-full rounded-2xl bg-[#7c3aed] text-base font-extrabold text-white hover:bg-[#6d28d9]"
+          >
             {grading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />

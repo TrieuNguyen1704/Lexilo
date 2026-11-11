@@ -12,16 +12,14 @@ export function WeeklyRhythmChart({ week }: WeeklyRhythmChartProps) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-          Nhịp học 7 ngày qua
-        </span>
-        <span className="text-[11px] font-semibold text-slate-500">
+      <div className="mb-2.5 flex items-center justify-between px-1">
+        <span className="text-xs font-extrabold text-slate-700">Nhịp học 7 ngày qua</span>
+        <span className="text-[11px] font-bold text-slate-600">
           {activeDaysCount}/7 ngày hoạt động
         </span>
       </div>
 
-      <div className="grid grid-cols-7 gap-1.5 pt-1 pb-1 sm:gap-2">
+      <div className="grid grid-cols-7 gap-1.5 py-1 sm:gap-2">
         {week.map((day) => {
           const hasLearned = day.count > 0;
           const barHeightPercent = Math.max(
@@ -32,27 +30,27 @@ export function WeeklyRhythmChart({ week }: WeeklyRhythmChartProps) {
           return (
             <div
               key={day.dateStr}
-              className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition-all ${
+              className={`flex flex-col items-center gap-1.5 rounded-2xl p-1.5 transition-all ${
                 day.isToday
-                  ? "bg-orange-100/70 shadow-xs ring-2 ring-[#ff5e3a]/40 dark:bg-orange-950/50"
-                  : "hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
+                  ? "bg-orange-100/75 shadow-xs ring-2 ring-[#ff6b4a]/45"
+                  : "hover:bg-violet-50/60"
               }`}
             >
               <span
-                className={`text-[10px] font-black ${
-                  hasLearned ? "text-[#ff5e3a]" : "text-slate-300 dark:text-slate-600"
+                className={`text-[11px] font-extrabold ${
+                  hasLearned ? "text-[#c2410c]" : "text-slate-400"
                 }`}
               >
                 {hasLearned ? `${day.count}` : "-"}
               </span>
 
-              <div className="flex h-24 w-full items-end overflow-hidden rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+              <div className="flex h-24 w-full items-end overflow-hidden rounded-xl bg-slate-100/90 p-0.5 shadow-[inset_0_1px_2px_rgba(15,23,42,0.06)]">
                 <div
-                  className={`w-full rounded-md transition-all duration-700 ${
+                  className={`w-full rounded-lg transition-all duration-700 ${
                     hasLearned
                       ? day.isToday
                         ? "bg-gradient-to-t from-[#ff4d2e] to-[#ff9800] shadow-xs"
-                        : "bg-gradient-to-t from-[#6366f1] to-[#818cf8]"
+                        : "bg-gradient-to-t from-[#7c3aed] to-[#a78bfa]"
                       : "bg-transparent"
                   }`}
                   style={{ height: hasLearned ? `${barHeightPercent}%` : "0%" }}
@@ -61,18 +59,18 @@ export function WeeklyRhythmChart({ week }: WeeklyRhythmChartProps) {
 
               <div className="flex flex-col items-center">
                 <span
-                  className={`text-[11px] font-black ${
+                  className={`text-[11px] font-extrabold ${
                     day.isToday
-                      ? "text-[#ff5e3a]"
+                      ? "text-[#c2410c]"
                       : hasLearned
-                      ? "text-slate-800 dark:text-slate-200"
-                      : "text-slate-400 dark:text-slate-500"
+                      ? "text-slate-800"
+                      : "text-slate-500"
                   }`}
                 >
                   {day.label}
                 </span>
                 {day.isToday && (
-                  <span className="text-[9px] leading-none font-extrabold text-[#ff5e3a] uppercase">
+                  <span className="text-[9px] leading-none font-black text-[#c2410c] uppercase">
                     Nay
                   </span>
                 )}

@@ -25,34 +25,38 @@ export function AiPreviewList({
   const selectedCount = cards.filter((card) => card.selected).length;
 
   return (
-    <div className="mt-6">
+    <div className="mt-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black">Duyệt kết quả AI</h2>
-          <p className="text-sm text-slate-500">Sửa, bỏ chọn hoặc xóa từng thẻ trước khi lưu.</p>
+          <h2 className="font-display text-xl font-bold text-slate-900">Duyệt kết quả AI</h2>
+          <p className="text-sm font-medium text-slate-600">
+            Sửa, bỏ chọn hoặc xóa từng thẻ trước khi lưu.
+          </p>
         </div>
         <Button
           disabled={!selectedCount}
           onClick={onSaveSelected}
-          className="rounded-xl font-bold"
+          className="clay-cta h-10 rounded-2xl bg-[#047857] px-5 font-bold text-white hover:bg-[#065f46]"
         >
           Lưu {selectedCount} thẻ đã chọn
         </Button>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3.5">
         {cards.map((card, index) => (
           <div
             key={card.id}
-            className={`rounded-2xl border bg-white p-4 shadow-sm ${card.selected ? "" : "opacity-55"}`}
+            className={`clay-card rounded-3xl p-4 sm:p-5 transition-opacity ${
+              card.selected ? "" : "opacity-55"
+            }`}
           >
             <div className="mb-3 flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm font-black">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-extrabold text-slate-800">
                 <input
                   type="checkbox"
                   checked={card.selected}
                   onChange={(event) => onToggleSelected(card.id, event.target.checked)}
-                  className="size-4 accent-[#6c63ff]"
+                  className="size-4 accent-[#7c3aed]"
                 />
                 Thẻ {index + 1}
               </label>
@@ -61,38 +65,39 @@ export function AiPreviewList({
                 size="icon"
                 aria-label="Xóa khỏi bản xem trước"
                 onClick={() => onRemove(card.id)}
+                className="size-9 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600"
               >
-                <X />
+                <X size={16} />
               </Button>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <PreviewField
-                label="Front"
+                label="Mặt trước (Front)"
                 value={card.front}
                 onChange={(value) => onUpdateField(card.id, "front", value)}
               />
               <PreviewField
-                label="IPA"
+                label="Phiên âm IPA"
                 value={card.ipa}
                 onChange={(value) => onUpdateField(card.id, "ipa", value)}
               />
               <PreviewField
-                label="Part of speech"
+                label="Từ loại"
                 value={card.partOfSpeech}
                 onChange={(value) => onUpdateField(card.id, "partOfSpeech", value)}
               />
               <PreviewField
-                label="Back"
+                label="Mặt sau (Back)"
                 value={card.back}
                 onChange={(value) => onUpdateField(card.id, "back", value)}
               />
-              <label className="grid gap-1 text-xs font-black text-slate-500 uppercase sm:col-span-2">
-                Example
+              <label className="grid gap-1 text-xs font-extrabold text-slate-600 uppercase sm:col-span-2">
+                Câu ví dụ (Example)
                 <Textarea
                   value={card.example}
                   onChange={(event) => onUpdateField(card.id, "example", event.target.value)}
-                  className="rounded-xl"
+                  className="rounded-2xl border-[var(--border)] bg-white"
                 />
               </label>
             </div>
@@ -113,12 +118,12 @@ function PreviewField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-1 text-xs font-black text-slate-500 uppercase">
+    <label className="grid gap-1 text-xs font-extrabold text-slate-600 uppercase">
       {label}
       <Input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl"
+        className="h-10 rounded-2xl border-[var(--border)] bg-white"
       />
     </label>
   );

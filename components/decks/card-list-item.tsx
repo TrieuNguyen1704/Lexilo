@@ -24,19 +24,21 @@ export function CardListItem({
 }: CardListItemProps) {
   if (layout === "detail") {
     return (
-      <div className="grid items-center gap-3 border-b p-4 transition last:border-0 hover:bg-slate-50/60 sm:grid-cols-[1fr_auto]">
+      <div className="grid items-center gap-3 border-b border-[var(--border)] p-4 transition-colors last:border-0 hover:bg-violet-50/35 sm:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="break-words font-black text-slate-900">{card.front}</span>
+            <span className="font-display text-base font-bold break-words text-slate-900">
+              {card.front}
+            </span>
             {card.isDifficult && <Flag size={14} className="fill-amber-400 text-amber-500" />}
           </div>
-          {card.ipa && <p className="mt-0.5 text-xs font-semibold text-slate-400">{card.ipa}</p>}
+          {card.ipa && <p className="mt-0.5 text-xs font-semibold text-slate-500">{card.ipa}</p>}
           {card.partOfSpeech && (
-            <span className="mt-1 inline-flex rounded-full bg-[#f0efff] px-2 py-0.5 text-[11px] font-black lowercase text-[#6258ef]">
+            <span className="mt-1.5 inline-flex rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-extrabold lowercase text-[#6d28d9]">
               {card.partOfSpeech}
             </span>
           )}
-          <p className="mt-1.5 text-sm font-semibold text-slate-700">{card.back}</p>
+          <p className="mt-1.5 text-sm font-bold text-slate-700">{card.back}</p>
           {card.example && <p className="mt-1 text-xs italic text-slate-500">“{card.example}”</p>}
         </div>
 
@@ -45,7 +47,7 @@ export function CardListItem({
             variant="ghost"
             size="sm"
             onClick={() => speakCard(card)}
-            className="rounded-xl text-slate-500 hover:text-slate-800"
+            className="size-9 rounded-xl p-0 text-slate-600 hover:bg-violet-50 hover:text-slate-900"
             title="Nghe phát âm"
             aria-label="Phát âm"
           >
@@ -55,7 +57,11 @@ export function CardListItem({
             variant="ghost"
             size="sm"
             onClick={() => onToggleDifficult(card)}
-            className={`rounded-xl ${card.isDifficult ? "bg-amber-50 text-amber-700" : "text-slate-500"}`}
+            className={`h-9 rounded-xl px-2.5 text-xs font-bold ${
+              card.isDifficult
+                ? "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
           >
             <Flag size={14} className={card.isDifficult ? "fill-amber-400 text-amber-500" : ""} />
             {card.isDifficult ? "Đã Khó" : "Đánh dấu Khó"}
@@ -65,7 +71,7 @@ export function CardListItem({
             size="icon"
             onClick={() => onEdit(card)}
             aria-label="Sửa thẻ"
-            className="size-8 rounded-xl text-slate-500 hover:text-slate-800"
+            className="size-9 rounded-xl text-slate-600 hover:bg-violet-50 hover:text-slate-900"
           >
             <Pencil size={15} />
           </Button>
@@ -73,7 +79,7 @@ export function CardListItem({
             variant="ghost"
             size="icon"
             onClick={() => onDelete(card.id)}
-            className="size-8 rounded-xl text-red-500 hover:text-red-700"
+            className="size-9 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
             aria-label="Xóa thẻ"
           >
             <Trash2 size={15} />
@@ -84,13 +90,15 @@ export function CardListItem({
   }
 
   return (
-    <div className="grid items-center gap-3 border-b p-4 transition last:border-0 hover:bg-slate-50/60 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_auto]">
-      <button onClick={() => onEdit(card)} className="min-w-0 text-left hover:text-[#6c63ff]">
+    <div className="grid items-center gap-3 border-b border-[var(--border)] p-4 transition-colors last:border-0 hover:bg-violet-50/35 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_auto]">
+      <button onClick={() => onEdit(card)} className="min-w-0 rounded-xl text-left hover:text-[#6d28d9]">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="break-words font-black text-slate-900">{card.front}</span>
+          <span className="font-display text-base font-bold break-words text-slate-900">
+            {card.front}
+          </span>
           {deck && (
             <span
-              className="inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white"
+              className="inline-flex rounded-lg px-2 py-0.5 text-[10px] font-extrabold text-white"
               style={{ backgroundColor: deck.color }}
             >
               {deck.name}
@@ -98,18 +106,18 @@ export function CardListItem({
           )}
           {card.isDifficult && <Flag size={14} className="fill-amber-400 text-amber-500" />}
         </div>
-        {card.ipa && <p className="mt-0.5 text-xs font-semibold text-slate-400">{card.ipa}</p>}
+        {card.ipa && <p className="mt-0.5 text-xs font-semibold text-slate-500">{card.ipa}</p>}
         {card.partOfSpeech && (
-          <span className="mt-1 inline-flex rounded-full bg-[#f0efff] px-2 py-0.5 text-[10px] font-black lowercase text-[#6258ef]">
+          <span className="mt-1 inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-extrabold lowercase text-[#6d28d9]">
             {card.partOfSpeech}
           </span>
         )}
       </button>
 
       <div className="min-w-0">
-        <span className="text-sm font-semibold text-slate-700 sm:text-base">{card.back}</span>
+        <span className="text-sm font-bold text-slate-700 sm:text-base">{card.back}</span>
         {card.example && (
-          <p className="mt-1 truncate text-xs italic text-slate-400">“{card.example}”</p>
+          <p className="mt-1 truncate text-xs italic text-slate-500">“{card.example}”</p>
         )}
       </div>
 
@@ -117,7 +125,7 @@ export function CardListItem({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-slate-400 hover:text-slate-700"
+          className="size-9 rounded-xl text-slate-500 hover:bg-violet-50 hover:text-slate-800"
           onClick={() => speakCard(card)}
           aria-label="Phát âm"
           title="Nghe phát âm"
@@ -127,7 +135,7 @@ export function CardListItem({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-slate-400 hover:text-amber-600"
+          className="size-9 rounded-xl text-slate-500 hover:bg-amber-50 hover:text-amber-700"
           onClick={() => onToggleDifficult(card)}
           aria-label="Đánh dấu khó"
           title={card.isDifficult ? "Bỏ đánh dấu khó" : "Đánh dấu thẻ khó"}
@@ -137,7 +145,7 @@ export function CardListItem({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-slate-400 hover:text-slate-800"
+          className="size-9 rounded-xl text-slate-500 hover:bg-violet-50 hover:text-slate-900"
           onClick={() => onEdit(card)}
           aria-label="Sửa thẻ"
         >
@@ -146,7 +154,7 @@ export function CardListItem({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-slate-400 hover:text-red-500"
+          className="size-9 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600"
           onClick={() => onDelete(card.id)}
           aria-label="Xóa thẻ"
         >

@@ -144,7 +144,7 @@ export function LearnMode({
         recordOutcome(
           localPass,
           expectedText,
-          `⚠️ Gemini tạm gián đoạn (${reason}) — đã chấm đối chiếu cục bộ.`,
+          `Gemini tạm gián đoạn (${reason}) — đã chấm đối chiếu cục bộ.`,
           aiQuestion?.explanation,
         );
       } finally {
@@ -214,7 +214,8 @@ export function LearnMode({
           <select
             value={directionChoice}
             onChange={(event) => setDirectionChoice(event.target.value as DirectionChoice)}
-            className="h-10 rounded-xl border bg-white px-3 text-sm font-bold"
+            aria-label="Chiều câu hỏi"
+            className="h-10 rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3.5 text-sm font-bold text-slate-800 shadow-[var(--clay-shadow-soft)]"
           >
             <option value="both">Hai chiều</option>
             <option value="en-vi">English → Vietnamese</option>
@@ -224,19 +225,22 @@ export function LearnMode({
       />
 
       {cards.length > 0 && card && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-white to-violet-50/70 px-4 py-2.5">
+        <div className="clay-card mb-4 flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border-violet-200/80 bg-gradient-to-r from-violet-50/75 via-white to-indigo-50/60 px-4 py-2.5">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <Sparkles size={15} className={geminiActive && useAiMode ? "text-[#6366f1]" : "text-slate-400"} />
+            <Sparkles
+              size={15}
+              className={geminiActive && useAiMode ? "text-[#7c3aed]" : "text-slate-400"}
+            />
             {geminiActive ? (
               <span>
                 Gia sư Gemini (<code>{geminiModel}</code>):{" "}
-                <b className={useAiMode ? "text-[#6366f1]" : "text-slate-500"}>
+                <b className={useAiMode ? "text-[#6d28d9]" : "text-slate-500"}>
                   {useAiMode ? "Đang bật chấm nghĩa thông minh" : "Đang tắt"}
                 </b>
                 {aiQuestionsCount > 0 && useAiMode ? ` · ${aiQuestionsCount} câu ngữ cảnh` : ""}
               </span>
             ) : (
-              <span className="text-slate-500">
+              <span className="text-slate-600">
                 Bật Gemini AI để chấm nghĩa linh hoạt &amp; tạo câu hỏi ngữ cảnh
               </span>
             )}
@@ -250,8 +254,10 @@ export function LearnMode({
                   size="sm"
                   variant={useAiMode ? "default" : "outline"}
                   onClick={() => setAiModeOverride(!useAiMode)}
-                  className={`h-8 rounded-xl text-xs font-bold ${
-                    useAiMode ? "bg-[#6366f1] hover:bg-[#4f46e5]" : ""
+                  className={`h-8 rounded-xl px-3 text-xs font-extrabold ${
+                    useAiMode
+                      ? "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
+                      : "border-[var(--border)] bg-white text-slate-700"
                   }`}
                 >
                   {useAiMode ? "AI: BẬT" : "AI: TẮT"}
@@ -262,7 +268,7 @@ export function LearnMode({
                   variant="outline"
                   disabled={generatingAi}
                   onClick={() => void handleGenerateAiQuestions()}
-                  className="h-8 gap-1 rounded-xl border-indigo-200 text-xs font-bold text-[#6366f1] hover:bg-indigo-50"
+                  className="h-8 gap-1 rounded-xl border-violet-200 bg-white px-3 text-xs font-extrabold text-[#6d28d9] hover:bg-violet-50"
                 >
                   {generatingAi ? (
                     <Loader2 size={13} className="animate-spin" />
@@ -282,7 +288,7 @@ export function LearnMode({
               size="sm"
               variant="ghost"
               onClick={onOpenGeminiSettings}
-              className="h-8 gap-1 rounded-xl px-2.5 text-xs font-bold text-slate-600"
+              className="h-8 gap-1 rounded-xl px-2.5 text-xs font-bold text-slate-600 hover:bg-violet-50"
             >
               <Settings2 size={13} />
               {geminiActive ? "Key" : "Cài API Key"}
@@ -294,65 +300,80 @@ export function LearnMode({
       {!cards.length ? (
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : !card ? (
-        <div className="rounded-[28px] border bg-white p-7 text-center shadow-sm">
-          <Check className="mx-auto text-[#17a673]" size={54} />
-          <h2 className="mt-4 text-2xl font-black">Hoàn thành Learn</h2>
-          <p className="mt-2 text-slate-500">
+        <div className="clay-card rounded-[32px] p-8 text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-100 text-[#047857]">
+            <Check size={34} strokeWidth={2.75} />
+          </span>
+          <h2 className="font-display mt-4 text-2xl font-bold text-slate-900">Hoàn thành Learn</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">
             Đúng {correctCount} · Sai {wrongCount}. Kết quả chưa thay đổi lịch FSRS.
           </p>
-          <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
-            <Button disabled={busy || saved} onClick={saveToFsrs}>
+          <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
+            <Button
+              disabled={busy || saved}
+              onClick={saveToFsrs}
+              className="clay-cta h-11 rounded-2xl bg-[#047857] px-6 font-bold text-white hover:bg-[#065f46]"
+            >
               {saved ? "Đã ghi vào FSRS" : busy ? "Đang ghi..." : "Ghi kết quả vào FSRS"}
             </Button>
-            <Button variant="outline" onClick={onBack}>
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="h-11 rounded-2xl border-[var(--border)] bg-white px-6 font-bold"
+            >
               Trở về bộ thẻ
             </Button>
           </div>
         </div>
       ) : (
         <>
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            <StudyStat label="Đúng" value={correctCount} color="#17a673" />
-            <StudyStat label="Sai" value={wrongCount} color="#ef4444" />
-            <StudyStat label="Còn lại" value={remaining} color="#6c63ff" />
+          <div className="mb-4 grid grid-cols-3 gap-3">
+            <StudyStat label="Đúng" value={correctCount} color="#047857" />
+            <StudyStat label="Sai" value={wrongCount} color="#dc2626" />
+            <StudyStat label="Còn lại" value={remaining} color="#7c3aed" />
           </div>
-          <Progress value={cards.length ? ((cards.length - remaining) / cards.length) * 100 : 0} />
+          <Progress
+            value={cards.length ? ((cards.length - remaining) / cards.length) * 100 : 0}
+            className="h-2.5 rounded-full"
+          />
 
-          <div className="mt-4 rounded-[28px] border bg-white p-6 shadow-sm sm:p-8">
+          <div className="clay-card mt-4 rounded-[30px] p-6 sm:p-8">
             <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 text-xs font-black tracking-[.15em] text-[#6c63ff] uppercase">
+              <span className="flex items-center gap-1.5 text-xs font-extrabold tracking-[.14em] text-[#6d28d9] uppercase">
                 {aiQuestion && <Sparkles size={13} />}
                 {kind === "multiple-choice" ? "Trắc nghiệm" : "Gõ đáp án"} ·{" "}
                 {direction === "en-vi" ? "EN → VI" : "VI → EN"}
               </span>
-              <span className="text-xs font-bold text-slate-400">
+              <span className="rounded-full bg-[#f7f3fd] px-3 py-1 text-xs font-extrabold text-slate-600">
                 Đúng {mastery[card.id] || 0}/2
               </span>
             </div>
 
-            <h2 className="my-8 text-center text-2xl font-black sm:text-3xl">{promptText}</h2>
+            <h2 className="font-display my-8 text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+              {promptText}
+            </h2>
             {direction === "en-vi" && !aiQuestion && (
               <div className="-mt-5 mb-7">
                 <WordMeta card={card} />
               </div>
             )}
             {aiQuestion?.hint && (
-              <p className="-mt-4 mb-6 text-center text-xs font-semibold text-indigo-600">
+              <p className="-mt-4 mb-6 text-center text-xs font-bold text-[#6d28d9]">
                 Gợi ý: {aiQuestion.hint}
               </p>
             )}
 
             {kind === "multiple-choice" ? (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {choices.map((choice) => (
                   <button
                     key={choice}
                     disabled={Boolean(feedback)}
                     onClick={() => void answer(choice)}
-                    className={`rounded-2xl border p-4 text-left font-bold transition ${
+                    className={`tap-press min-h-14 rounded-2xl border-[1.5px] p-4 text-left text-sm font-bold transition-all sm:text-base ${
                       feedback && normalizeAnswer(choice) === normalizeAnswer(feedback.expected)
-                        ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                        : "bg-white hover:border-[#6c63ff]"
+                        ? "border-emerald-400 bg-emerald-50 text-emerald-800 shadow-xs"
+                        : "border-[var(--border)] bg-[#fdfbff] text-slate-800 shadow-[var(--clay-shadow-soft)] hover:border-[#7c3aed] hover:bg-violet-50/50"
                     }`}
                   >
                     {choice}
@@ -373,19 +394,23 @@ export function LearnMode({
                   value={typed}
                   onChange={(event) => setTyped(event.target.value)}
                   placeholder="Nhập câu trả lời..."
-                  className="h-12 text-base"
+                  className="h-12 rounded-2xl border-[var(--border)] bg-white text-base"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <Button
                     type="button"
                     variant="outline"
                     disabled={Boolean(feedback) || gradingAi}
                     onClick={() => void answer("")}
+                    className="h-11 rounded-2xl border-[var(--border)] bg-white font-bold text-slate-700"
                   >
-                    <HelpCircle />
+                    <HelpCircle size={16} />
                     Tôi không biết
                   </Button>
-                  <Button disabled={Boolean(feedback) || gradingAi || !typed.trim()}>
+                  <Button
+                    disabled={Boolean(feedback) || gradingAi || !typed.trim()}
+                    className="clay-cta h-11 rounded-2xl bg-[#7c3aed] font-bold text-white hover:bg-[#6d28d9]"
+                  >
                     {gradingAi ? (
                       <>
                         <Loader2 size={16} className="animate-spin" />

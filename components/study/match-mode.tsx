@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { shuffle } from "@/lib/domain/quiz";
 import type { Card } from "@/types/lexilo";
@@ -88,8 +88,9 @@ export function MatchMode({ cards, title, onBack }: MatchModeProps) {
         subtitle={`${title} · tối đa 6 cặp · không thay đổi FSRS`}
         onBack={onBack}
         trailing={
-          <span className="rounded-full bg-white px-4 py-2 text-sm font-black shadow-sm">
-            ⏱ {elapsed}s
+          <span className="clay-surface inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-extrabold text-slate-800">
+            <Timer size={16} className="text-[#7c3aed]" />
+            <span>{elapsed}s</span>
           </span>
         }
       />
@@ -97,24 +98,33 @@ export function MatchMode({ cards, title, onBack }: MatchModeProps) {
       {!cards.length ? (
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : complete ? (
-        <div className="rounded-[28px] border bg-white p-8 text-center shadow-sm">
-          <Check className="mx-auto text-[#17a673]" size={56} />
-          <h2 className="mt-4 text-3xl font-black">Ghép xong!</h2>
-          <p className="mt-2 text-slate-500">
+        <div className="clay-card rounded-[32px] p-8 text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-100 text-[#047857]">
+            <Check size={34} strokeWidth={2.75} />
+          </span>
+          <h2 className="font-display mt-4 text-3xl font-bold text-slate-900">Ghép xong!</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">
             Thời gian: {elapsed} giây · Ghép sai: {mistakes} lần
           </p>
-          <div className="mt-6 flex justify-center gap-2">
-            <Button onClick={reset}>
-              <RotateCcw />
+          <div className="mt-6 flex justify-center gap-2.5">
+            <Button
+              onClick={reset}
+              className="clay-cta h-11 rounded-2xl bg-[#7c3aed] px-5 font-bold text-white hover:bg-[#6d28d9]"
+            >
+              <RotateCcw size={16} />
               Chơi lại
             </Button>
-            <Button variant="outline" onClick={onBack}>
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="h-11 rounded-2xl border-[var(--border)] bg-white px-5 font-bold"
+            >
               Trở về
             </Button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4">
           {tiles.map((tile) => {
             const isMatched = matched.includes(tile.key);
             const isSelected = selected.includes(tile.key);
@@ -124,14 +134,14 @@ export function MatchMode({ cards, title, onBack }: MatchModeProps) {
                 key={tile.key}
                 disabled={isMatched}
                 onClick={() => choose(tile)}
-                className={`min-h-28 rounded-2xl border p-3 text-sm font-black transition sm:min-h-32 sm:text-base ${
+                className={`min-h-28 rounded-3xl border-2 p-3.5 text-sm font-extrabold transition-all sm:min-h-32 sm:text-base ${
                   isMatched
                     ? "pointer-events-none scale-90 opacity-0"
                     : isWrong
-                    ? "border-red-400 bg-red-50 text-red-700"
+                    ? "border-red-400 bg-red-50 text-red-700 shadow-xs"
                     : isSelected
-                    ? "border-[#6c63ff] bg-[#f0efff] text-[#554ceb] shadow-md"
-                    : "bg-white hover:-translate-y-0.5 hover:shadow-md"
+                    ? "border-[#7c3aed] bg-violet-50 text-[#5b21b6] shadow-[0_10px_22px_-6px_rgba(124,58,237,0.3)]"
+                    : "clay-card-interactive border-[var(--border)] text-slate-800"
                 }`}
               >
                 {tile.label}
