@@ -20,10 +20,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { DEFAULT_GEMINI_MODEL, GEMINI_MODEL_OPTIONS } from "@/lib/config/constants";
 import { emitGeminiConfigChange } from "@/hooks/use-gemini-status";
+import { DEFAULT_GEMINI_MODEL, GEMINI_MODEL_OPTIONS } from "@/lib/config/constants";
 import {
   getGeminiConfig,
+  getServerGeminiStatus,
   saveGeminiConfig,
   testGeminiConnection,
 } from "@/lib/services/gemini";
@@ -64,18 +65,23 @@ export function GeminiDialog(props: GeminiDialogProps) {
 
 function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps) {
   const initial = getGeminiConfig();
+  const serverStatus = getServerGeminiStatus();
   const isPreset = GEMINI_MODEL_OPTIONS.some((m) => m.value === initial.model);
 
   const [apiKey, setApiKey] = useState(initial.apiKey);
   const [model, setModel] = useState(initial.model || DEFAULT_GEMINI_MODEL);
   const [customModelMode, setCustomModelMode] = useState(!isPreset);
-  const [enabled, setEnabled] = useState(initial.apiKey ? initial.enabled : true);
+  const [enabled, setEnabled] = useState(
+    initial.apiKey || serverStatus.configured ? initial.enabled : true,
+  );
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  const hasAvailableKey = Boolean(apiKey.trim()) || serverStatus.configured;
+
   function handleSave() {
-    if (enabled && !apiKey.trim()) {
+    if (enabled && !hasAvailableKey) {
       onNotice("error", "Vui lòng nhập Gemini API Key hoặc tắt chế độ AI.");
       return;
     }
@@ -84,14 +90,14 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
     saveGeminiConfig({
       apiKey: apiKey.trim(),
       model: finalModel,
-      enabled: Boolean(apiKey.trim()) && enabled,
+      enabled: hasAvailableKey && enabled,
     });
     emitGeminiConfigChange();
     onSaved();
     onOpenChange(false);
     onNotice(
       "success",
-      apiKey.trim() && enabled
+      hasAvailableKey && enabled
         ? `Đã kích hoạt Gemini (${finalModel}) cho Learn & Kiểm tra!`
         : "Đã lưu cài đặt Gemini AI.",
     );
@@ -99,23 +105,26 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
 
   function handleClearKey() {
     setApiKey("");
-    setEnabled(false);
+    setEnabled(serverStatus.configured);
     setTestResult(null);
-    saveGeminiConfig({ apiKey: "", model, enabled: false });
+    saveGeminiConfig({ apiKey: "", model, enabled: serverStatus.configured });
     emitGeminiConfigChange();
     onSaved();
-    onNotice("success", "Đã xóa Gemini API Key khỏi trình duyệt.");
+    onNotice("success", "Đã xóa API Key tùy chỉnh trên trình duyệt.");
   }
 
   async function handleTestConnection() {
-    if (!apiKey.trim()) {
+    if (!hasAvailableKey) {
       onNotice("error", "Hãy nhập Gemini API Key trước khi kiểm tra.");
       return;
     }
 
     setTesting(true);
     setTestResult(null);
-    const result = await testGeminiConnection(apiKey.trim(), model.trim() || DEFAULT_GEMINI_MODEL);
+    const result = await testGeminiConnection(
+      apiKey.trim(),
+      model.trim() || DEFAULT_GEMINI_MODEL,
+    );
     setTestResult(result);
     setTesting(false);
 
@@ -128,6 +137,16 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
 
   return (
     <div className="space-y-4 py-1">
+      {serverStatus.configured && !apiKey.trim() && (
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs font-semibold text-emerald-800">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <span>
+            Hệ thống đã tích hợp sẵn <b>Gemini API Key</b> trên máy chủ (<code>.env</code>). Anh
+            có thể kiểm tra hoặc dùng ngay mà không cần nhập lại!
+          </span>
+        </div>
+      )}
+
       {/* Enable Switch */}
       <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/50 p-3.5">
         <div>
@@ -158,14 +177,16 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
       {/* API Key Input */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <label className="text-xs font-semibold text-foreground">Gemini API Key</label>
+          <label className="text-xs font-semibold text-foreground">
+            {serverStatus.configured ? "API Key riêng (Tùy chọn ghi đè)" : "Gemini API Key"}
+          </label>
           <a
             href="https://aistudio.google.com/apikey"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[11px] font-bold text-[#6366f1] hover:underline"
           >
-            Lấy key miễn phí tại AI Studio →
+            Lấy key tại AI Studio →
           </a>
         </div>
 
@@ -179,7 +200,11 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
                 setApiKey(e.target.value);
                 setTestResult(null);
               }}
-              placeholder="AIzaSy..."
+              placeholder={
+                serverStatus.configured
+                  ? "Đang dùng key bảo mật của hệ thống"
+                  : "AIza... hoặc AQ..."
+              }
               className="h-10 w-full rounded-xl pr-9 pl-9 font-mono text-xs sm:text-sm"
               autoCapitalize="none"
               autoCorrect="off"
@@ -200,7 +225,7 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
               variant="outline"
               size="icon"
               onClick={handleClearKey}
-              title="Xóa API Key"
+              title="Xóa API Key trình duyệt"
               className="h-10 w-10 shrink-0 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600"
             >
               <Trash2 className="h-4 w-4" />
@@ -271,19 +296,19 @@ function GeminiDialogBody({ onOpenChange, onSaved, onNotice }: GeminiDialogProps
         type="button"
         variant="outline"
         onClick={handleTestConnection}
-        disabled={testing || !apiKey.trim()}
+        disabled={testing || !hasAvailableKey}
         className="h-10 w-full gap-2 rounded-xl text-xs font-bold"
       >
         <PlugZap className="h-4 w-4 text-[#6366f1]" />
-        {testing ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối API Key"}
+        {testing ? "Đang kiểm tra kết nối..." : "Kiểm tra kết nối Gemini"}
       </Button>
 
       {/* Security Note */}
       <div className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-[11px] leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
         <span>
-          API Key chỉ được lưu trực tiếp trong trình duyệt/thiết bị này và gọi thẳng tới máy chủ
-          Google Gemini — không gửi qua máy chủ trung gian.
+          Key hệ thống được lưu bảo mật trong biến môi trường máy chủ (không đẩy lên GitHub).
+          Key tự nhập sẽ chỉ lưu cục bộ trên trình duyệt này.
         </span>
       </div>
 

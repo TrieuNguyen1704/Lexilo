@@ -49,7 +49,8 @@ export function TestMode({
   const [count, setCount] = useState(Math.min(10, Math.max(1, cards.length)));
   const [kindChoice, setKindChoice] = useState<QuestionKind | "mixed">("mixed");
   const [directionChoice, setDirectionChoice] = useState<DirectionChoice>("both");
-  const [useAiEngine, setUseAiEngine] = useState(geminiActive);
+  const [aiEngineOverride, setAiEngineOverride] = useState<boolean | null>(null);
+  const useAiEngine = geminiActive && (aiEngineOverride ?? true);
 
   const [questions, setQuestions] = useState<AiTestQuestion[]>([]);
   const [testUsedAi, setTestUsedAi] = useState(false);
@@ -243,7 +244,7 @@ export function TestMode({
                     onOpenGeminiSettings();
                     return;
                   }
-                  setUseAiEngine((prev) => !prev);
+                  setAiEngineOverride(!useAiEngine);
                 }}
                 className={`flex h-10 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-black transition ${
                   useAiEngine && geminiActive

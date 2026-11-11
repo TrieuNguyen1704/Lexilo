@@ -5,8 +5,20 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { createEmptyCard, fsrs, Rating } from "ts-fsrs";
 import { migrateLearningModes } from "./db/migrations/002-learning-modes.mjs";
+import {
+  DEFAULT_GEMINI_MODEL,
+  forwardGeminiGenerateContent,
+} from "./lib/services/gemini-proxy.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
+const localEnvPath = path.join(root, ".env.local");
+if (fs.existsSync(localEnvPath)) {
+  try {
+    process.loadEnvFile?.(localEnvPath);
+  } catch {
+    // Ignore malformed .env.local entries
+  }
+}
 const dataDirectory = path.join(root, "data");
 const databasePath = process.env.LEXILO_DB_PATH || path.join(dataDirectory, "lexilo.db");
 const port = Number(process.env.LEXILO_PORT || 5173);
@@ -554,6 +566,36 @@ async function handleApi(req, res, url) {
     const normalized = cards.map(normalizeAiCard).filter((card) => card.front && card.back).slice(0, 30);
     if (!normalized.length) return sendError(res, 502, "AI không tạo được thẻ hợp lệ");
     return sendJson(res, { cards: normalized });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/gemini") {
+    return sendJson(res, {
+      configured: Boolean(process.env.GEMINI_API_KEY?.trim()),
+      defaultModel: process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL,
+    });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/gemini") {
+    const payload = await readBody(req);
+    const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+    if (!prompt) return sendError(res, 400, "Thiếu nội dung prompt.");
+    const activeKey = String(payload.apiKey || process.env.GEMINI_API_KEY || "").trim();
+    const activeModel =
+      String(payload.model || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL).trim() ||
+      DEFAULT_GEMINI_MODEL;
+
+    try {
+      const result = await forwardGeminiGenerateContent({
+        apiKey: activeKey,
+        model: activeModel,
+        prompt,
+        temperature: typeof payload.temperature === "number" ? payload.temperature : 0.4,
+        timeoutMs: typeof payload.timeoutMs === "number" ? payload.timeoutMs : 25_000,
+      });
+      return sendJson(res, result);
+    } catch (error) {
+      return sendError(res, error?.status || 500, error?.message || "Lỗi gọi Gemini API.");
+    }
   }
 
   return false;

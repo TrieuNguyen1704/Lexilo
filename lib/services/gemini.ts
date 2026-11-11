@@ -9,20 +9,45 @@ import type {
   GeminiConfig,
 } from "@/types/ai";
 import type { Card, CardDraft, Direction, DirectionChoice, QuestionKind } from "@/types/lexilo";
+import { forwardGeminiGenerateContent } from "./gemini-proxy.mjs";
 
-const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+export interface ServerGeminiStatus {
+  checked: boolean;
+  configured: boolean;
+  defaultModel: string;
+}
 
-interface GeminiApiResponse {
-  candidates?: {
-    content?: {
-      parts?: { text?: string }[];
+let serverStatus: ServerGeminiStatus = {
+  checked: false,
+  configured: false,
+  defaultModel: DEFAULT_GEMINI_MODEL,
+};
+
+export function getServerGeminiStatus(): ServerGeminiStatus {
+  return serverStatus;
+}
+
+export async function fetchServerGeminiStatus(): Promise<ServerGeminiStatus> {
+  if (typeof window === "undefined") return serverStatus;
+  try {
+    const response = await fetch("/api/gemini", { cache: "no-store" });
+    if (!response.ok) {
+      serverStatus = { ...serverStatus, checked: true, configured: false };
+      return serverStatus;
+    }
+    const payload = (await response.json()) as {
+      configured?: boolean;
+      defaultModel?: string;
     };
-  }[];
-  error?: {
-    code?: number;
-    message?: string;
-    status?: string;
-  };
+    serverStatus = {
+      checked: true,
+      configured: Boolean(payload.configured),
+      defaultModel: payload.defaultModel || DEFAULT_GEMINI_MODEL,
+    };
+  } catch {
+    serverStatus = { ...serverStatus, checked: true, configured: false };
+  }
+  return serverStatus;
 }
 
 export function getGeminiConfig(): GeminiConfig {
@@ -30,14 +55,18 @@ export function getGeminiConfig(): GeminiConfig {
     return { apiKey: "", model: DEFAULT_GEMINI_MODEL, enabled: false };
   }
   const apiKey = window.localStorage.getItem(STORAGE_KEYS.GEMINI_API_KEY) || "";
-  const model = window.localStorage.getItem(STORAGE_KEYS.GEMINI_MODEL) || DEFAULT_GEMINI_MODEL;
+  const model =
+    window.localStorage.getItem(STORAGE_KEYS.GEMINI_MODEL) ||
+    serverStatus.defaultModel ||
+    DEFAULT_GEMINI_MODEL;
   const enabledRaw = window.localStorage.getItem(STORAGE_KEYS.GEMINI_ENABLED);
-  const enabled = enabledRaw === null ? Boolean(apiKey.trim()) : enabledRaw === "true";
+  const hasAnyKey = Boolean(apiKey.trim()) || serverStatus.configured;
+  const enabled = enabledRaw === null ? hasAnyKey : enabledRaw === "true";
 
   return {
     apiKey: apiKey.trim(),
     model: model.trim() || DEFAULT_GEMINI_MODEL,
-    enabled: Boolean(apiKey.trim()) && enabled,
+    enabled: hasAnyKey && enabled,
   };
 }
 
@@ -58,7 +87,7 @@ export function saveGeminiConfig(config: GeminiConfig): void {
 
 export function hasActiveGeminiConfig(): boolean {
   const cfg = getGeminiConfig();
-  return Boolean(cfg.apiKey && cfg.enabled);
+  return Boolean((cfg.apiKey || serverStatus.configured) && cfg.enabled);
 }
 
 export function extractJsonFromGeminiText<T>(rawText: string): T {
@@ -71,20 +100,35 @@ export function extractJsonFromGeminiText<T>(rawText: string): T {
   return JSON.parse(cleaned) as T;
 }
 
-function formatGeminiHttpError(status: number, model: string, apiMessage?: string): string {
-  if (status === 400 && apiMessage?.toLowerCase().includes("api key")) {
-    return "Gemini API Key không hợp lệ. Hãy kiểm tra lại khóa bắt đầu bằng 'AIza...'.";
+async function callServerGeminiProxy({
+  prompt,
+  model,
+  temperature,
+  timeoutMs,
+}: {
+  prompt: string;
+  model: string;
+  temperature: number;
+  timeoutMs: number;
+}): Promise<string> {
+  const response = await fetch("/api/gemini", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, model, temperature, timeoutMs }),
+    signal: AbortSignal.timeout(timeoutMs + 2000),
+  });
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    text?: string;
+    error?: string;
+  };
+  if (!response.ok) {
+    throw new Error(payload.error || `Lỗi kết nối máy chủ Gemini (HTTP ${response.status}).`);
   }
-  if (status === 401 || status === 403) {
-    return "Gemini API Key bị từ chối hoặc chưa bật quyền Generative Language API.";
+  if (!payload.text) {
+    throw new Error("Gemini không trả về dữ liệu hợp lệ.");
   }
-  if (status === 404) {
-    return `Model "${model}" không khả dụng với API Key này. Hãy thử chuyển sang gemini-3.8-flash hoặc gemini-2.5-flash trong Cài đặt Gemini.`;
-  }
-  if (status === 429) {
-    return "Đã vượt quá giới hạn lượt gọi (quota) Gemini API. Vui lòng đợi một chút rồi thử lại.";
-  }
-  return apiMessage || `Lỗi kết nối Gemini API (HTTP ${status}).`;
+  return payload.text;
 }
 
 export async function callGeminiJson<T>({
@@ -101,43 +145,28 @@ export async function callGeminiJson<T>({
   timeoutMs?: number;
 }): Promise<T> {
   const stored = getGeminiConfig();
-  const apiKey = (apiKeyOverride ?? stored.apiKey).trim();
+  const explicitKey = (apiKeyOverride ?? stored.apiKey).trim();
   const model = (modelOverride ?? stored.model).trim() || DEFAULT_GEMINI_MODEL;
 
-  if (!apiKey) {
+  let rawText: string;
+
+  if (explicitKey) {
+    const res = await forwardGeminiGenerateContent({
+      apiKey: explicitKey,
+      model,
+      prompt,
+      temperature,
+      timeoutMs,
+    });
+    rawText = res.text;
+  } else if (serverStatus.configured) {
+    rawText = await callServerGeminiProxy({ prompt, model, temperature, timeoutMs });
+  } else {
     throw new Error("Chưa cấu hình Gemini API Key.");
   }
 
-  const endpoint = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent`;
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature,
-        responseMimeType: "application/json",
-      },
-    }),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as GeminiApiResponse;
-
-  if (!response.ok) {
-    throw new Error(formatGeminiHttpError(response.status, model, payload.error?.message));
-  }
-
-  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error("Gemini không trả về dữ liệu hợp lệ.");
-  }
-
   try {
-    return extractJsonFromGeminiText<T>(text);
+    return extractJsonFromGeminiText<T>(rawText);
   } catch {
     throw new Error("Dữ liệu JSON từ Gemini không đúng định dạng.");
   }

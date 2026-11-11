@@ -1,7 +1,12 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { getGeminiConfig, hasActiveGeminiConfig } from "@/lib/services/gemini";
+import { useEffect, useSyncExternalStore } from "react";
+import {
+  fetchServerGeminiStatus,
+  getGeminiConfig,
+  getServerGeminiStatus,
+  hasActiveGeminiConfig,
+} from "@/lib/services/gemini";
 
 const GEMINI_CONFIG_EVENT = "lexilo-gemini-config-changed";
 
@@ -21,7 +26,17 @@ function subscribe(callback: () => void): () => void {
   };
 }
 
-export function useGeminiStatus(): { active: boolean; model: string } {
+export function useGeminiStatus(): {
+  active: boolean;
+  model: string;
+  serverConfigured: boolean;
+} {
+  useEffect(() => {
+    void fetchServerGeminiStatus().then(() => {
+      emitGeminiConfigChange();
+    });
+  }, []);
+
   const active = useSyncExternalStore(
     subscribe,
     () => hasActiveGeminiConfig(),
@@ -32,6 +47,11 @@ export function useGeminiStatus(): { active: boolean; model: string } {
     () => getGeminiConfig().model,
     () => "gemini-3.5-flash",
   );
+  const serverConfigured = useSyncExternalStore(
+    subscribe,
+    () => getServerGeminiStatus().configured,
+    () => false,
+  );
 
-  return { active, model };
+  return { active, model, serverConfigured };
 }

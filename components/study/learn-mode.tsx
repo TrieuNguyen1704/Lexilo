@@ -67,7 +67,8 @@ export function LearnMode({
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const [useAiMode, setUseAiMode] = useState(geminiActive);
+  const [aiModeOverride, setAiModeOverride] = useState<boolean | null>(null);
+  const useAiMode = geminiActive && (aiModeOverride ?? true);
   const [aiQuestions, setAiQuestions] = useState<Record<string, AiLearnQuestion>>({});
   const [generatingAi, setGeneratingAi] = useState(false);
   const [gradingAi, setGradingAi] = useState(false);
@@ -101,7 +102,7 @@ export function LearnMode({
     try {
       const generated = await generateLearnQuestionsWithAi(cards, directionChoice);
       setAiQuestions(generated);
-      setUseAiMode(true);
+      setAiModeOverride(true);
       onNotice(
         "success",
         `Gemini (${geminiModel}) đã tạo ${Object.keys(generated).length} câu hỏi ngữ cảnh!`,
@@ -238,7 +239,7 @@ export function LearnMode({
                   type="button"
                   size="sm"
                   variant={useAiMode ? "default" : "outline"}
-                  onClick={() => setUseAiMode((prev) => !prev)}
+                  onClick={() => setAiModeOverride(!useAiMode)}
                   className={`h-8 rounded-xl text-xs font-bold ${
                     useAiMode ? "bg-[#6366f1] hover:bg-[#4f46e5]" : ""
                   }`}
