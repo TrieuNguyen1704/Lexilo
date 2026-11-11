@@ -10,7 +10,27 @@ export function shuffle<T>(items: T[], random: () => number = Math.random): T[] 
 }
 
 export function normalizeAnswer(value: string): string {
-  return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+  return value
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/[.,!?;:'"“”()[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function isLocalFlexibleMatch(userAnswer: string, expectedAnswer: string): boolean {
+  const normalizedInput = normalizeAnswer(userAnswer);
+  if (!normalizedInput) return false;
+  if (normalizedInput === normalizeAnswer(expectedAnswer)) return true;
+
+  // Strip parenthetical clarifications and check semicolon/comma/slash meaning variants
+  const withoutParens = expectedAnswer.replace(/\([^)]*\)/g, " ");
+  const variants = withoutParens
+    .split(/[;/,|]+/)
+    .map((part) => normalizeAnswer(part))
+    .filter((part) => part.length >= 2);
+
+  return variants.some((variant) => variant === normalizedInput);
 }
 
 export function questionFor(card: Card, direction: Direction): string {

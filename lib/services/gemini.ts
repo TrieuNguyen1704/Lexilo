@@ -105,17 +105,19 @@ async function callServerGeminiProxy({
   model,
   temperature,
   timeoutMs,
+  thinkingLevel,
 }: {
   prompt: string;
   model: string;
   temperature: number;
   timeoutMs: number;
+  thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }): Promise<string> {
   const response = await fetch("/api/gemini", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model, temperature, timeoutMs }),
-    signal: AbortSignal.timeout(timeoutMs + 2000),
+    body: JSON.stringify({ prompt, model, temperature, timeoutMs, thinkingLevel }),
+    signal: AbortSignal.timeout(timeoutMs + 3000),
   });
 
   const payload = (await response.json().catch(() => ({}))) as {
@@ -136,13 +138,15 @@ export async function callGeminiJson<T>({
   apiKeyOverride,
   modelOverride,
   temperature = 0.4,
-  timeoutMs = 25_000,
+  timeoutMs = 20_000,
+  thinkingLevel = "minimal",
 }: {
   prompt: string;
   apiKeyOverride?: string;
   modelOverride?: string;
   temperature?: number;
   timeoutMs?: number;
+  thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }): Promise<T> {
   const stored = getGeminiConfig();
   const explicitKey = (apiKeyOverride ?? stored.apiKey).trim();
@@ -157,10 +161,17 @@ export async function callGeminiJson<T>({
       prompt,
       temperature,
       timeoutMs,
+      thinkingLevel,
     });
     rawText = res.text;
   } else if (serverStatus.configured) {
-    rawText = await callServerGeminiProxy({ prompt, model, temperature, timeoutMs });
+    rawText = await callServerGeminiProxy({
+      prompt,
+      model,
+      temperature,
+      timeoutMs,
+      thinkingLevel,
+    });
   } else {
     throw new Error("Chưa cấu hình Gemini API Key.");
   }
@@ -327,7 +338,8 @@ Return ONLY JSON matching:
   const result = await callGeminiJson<Partial<AiGradeResult>>({
     prompt: aiPrompt,
     temperature: 0.2,
-    timeoutMs: 12_000,
+    timeoutMs: 18_000,
+    thinkingLevel: "minimal",
   });
 
   return {

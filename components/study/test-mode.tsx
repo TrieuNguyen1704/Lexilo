@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import {
   answerFor,
   choicesFor,
+  isLocalFlexibleMatch,
   normalizeAnswer,
   questionFor,
   resolveDirection,
@@ -154,10 +155,15 @@ export function TestMode({
   const results = questions.map((question) => {
     const card = cards.find((candidate) => candidate.id === question.cardId)!;
     const answer = answers[question.key] || "";
-    const exactMatch = normalizeAnswer(answer) === normalizeAnswer(question.expected);
+    const strictMatch = normalizeAnswer(answer) === normalizeAnswer(question.expected);
+    const flexibleMatch = isLocalFlexibleMatch(answer, question.expected);
     const aiGrade = aiGrades[question.key];
     const correct =
-      question.kind === "typing" && aiGrade && answer.trim() ? aiGrade.isCorrect : exactMatch;
+      question.kind === "typing"
+        ? aiGrade && answer.trim()
+          ? aiGrade.isCorrect
+          : flexibleMatch
+        : strictMatch;
 
     return {
       question,

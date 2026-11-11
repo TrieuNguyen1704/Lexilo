@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   answerFor,
   choicesFor,
+  isLocalFlexibleMatch,
   normalizeAnswer,
   questionFor,
   resolveDirection,
@@ -117,9 +118,9 @@ export function LearnMode({
   async function answer(value: string) {
     if (!card || feedback || gradingAi) return;
 
-    const exactMatch = normalizeAnswer(value) === normalizeAnswer(expectedText);
+    const strictMatch = normalizeAnswer(value) === normalizeAnswer(expectedText);
 
-    if (kind === "typing" && !exactMatch && value.trim() && geminiActive && useAiMode) {
+    if (kind === "typing" && !strictMatch && value.trim() && geminiActive && useAiMode) {
       setTyped(value);
       setGradingAi(true);
       try {
@@ -136,16 +137,25 @@ export function LearnMode({
           graded.feedback,
           graded.explanation || aiQuestion?.explanation,
         );
-      } catch {
-        recordOutcome(false, expectedText, undefined, aiQuestion?.explanation);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "Lỗi kết nối Gemini";
+        onNotice("error", `${reason} Đang tạm chấm theo đối chiếu cục bộ.`);
+        const localPass = isLocalFlexibleMatch(value, expectedText);
+        recordOutcome(
+          localPass,
+          expectedText,
+          `⚠️ Gemini tạm gián đoạn (${reason}) — đã chấm đối chiếu cục bộ.`,
+          aiQuestion?.explanation,
+        );
       } finally {
         setGradingAi(false);
       }
       return;
     }
 
+    const passed = kind === "typing" ? isLocalFlexibleMatch(value, expectedText) : strictMatch;
     setTyped(value);
-    recordOutcome(exactMatch, expectedText, undefined, aiQuestion?.explanation);
+    recordOutcome(passed, expectedText, undefined, aiQuestion?.explanation);
   }
 
   function recordOutcome(

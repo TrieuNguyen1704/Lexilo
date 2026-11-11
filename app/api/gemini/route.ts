@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       model?: string;
       temperature?: number;
       timeoutMs?: number;
+      thinkingLevel?: "minimal" | "low" | "medium" | "high";
       apiKey?: string;
     };
 
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
       model: activeModel,
       prompt,
       temperature: typeof body.temperature === "number" ? body.temperature : 0.4,
-      timeoutMs: typeof body.timeoutMs === "number" ? body.timeoutMs : 25_000,
+      timeoutMs: typeof body.timeoutMs === "number" ? body.timeoutMs : 20_000,
+      thinkingLevel: body.thinkingLevel ?? "minimal",
     });
 
     return NextResponse.json(result);

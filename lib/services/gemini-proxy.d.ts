@@ -12,4 +12,5 @@ export function forwardGeminiGenerateContent(params: {
   prompt: string;
   temperature?: number;
   timeoutMs?: number;
+  thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }): Promise<{ text: string; model: string }>;

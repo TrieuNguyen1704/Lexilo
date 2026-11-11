@@ -590,7 +590,8 @@ async function handleApi(req, res, url) {
         model: activeModel,
         prompt,
         temperature: typeof payload.temperature === "number" ? payload.temperature : 0.4,
-        timeoutMs: typeof payload.timeoutMs === "number" ? payload.timeoutMs : 25_000,
+        timeoutMs: typeof payload.timeoutMs === "number" ? payload.timeoutMs : 20_000,
+        thinkingLevel: payload.thinkingLevel ?? "minimal",
       });
       return sendJson(res, result);
     } catch (error) {
