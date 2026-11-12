@@ -225,28 +225,34 @@ export function LearnMode({
       />
 
       {cards.length > 0 && card && (
-        <div className="clay-card mb-4 flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border-violet-200/80 bg-gradient-to-r from-violet-50/75 via-white to-indigo-50/60 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+        <div className="clay-card mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-violet-200/80 bg-gradient-to-r from-violet-50/75 via-white to-indigo-50/60 px-3 py-2 sm:mb-4 sm:px-4 sm:py-2.5">
+          <div className="flex min-w-0 items-center gap-1.5 text-xs font-bold text-slate-700 sm:gap-2">
             <Sparkles
-              size={15}
-              className={geminiActive && useAiMode ? "text-[#7c3aed]" : "text-slate-400"}
+              size={14}
+              className={`shrink-0 ${geminiActive && useAiMode ? "text-[#7c3aed]" : "text-slate-400"}`}
             />
             {geminiActive ? (
-              <span>
-                Gia sư Gemini (<code>{geminiModel}</code>):{" "}
-                <b className={useAiMode ? "text-[#6d28d9]" : "text-slate-500"}>
-                  {useAiMode ? "Đang bật chấm nghĩa thông minh" : "Đang tắt"}
-                </b>
-                {aiQuestionsCount > 0 && useAiMode ? ` · ${aiQuestionsCount} câu ngữ cảnh` : ""}
+              <span className="truncate">
+                <span className="sm:hidden">
+                  Gemini AI:{" "}
+                  <b className={useAiMode ? "text-[#6d28d9]" : "text-slate-500"}>
+                    {useAiMode ? "Đang bật" : "Đang tắt"}
+                  </b>
+                </span>
+                <span className="hidden sm:inline">
+                  Gia sư Gemini (<code>{geminiModel}</code>):{" "}
+                  <b className={useAiMode ? "text-[#6d28d9]" : "text-slate-500"}>
+                    {useAiMode ? "Đang bật chấm nghĩa thông minh" : "Đang tắt"}
+                  </b>
+                  {aiQuestionsCount > 0 && useAiMode ? ` · ${aiQuestionsCount} câu ngữ cảnh` : ""}
+                </span>
               </span>
             ) : (
-              <span className="text-slate-600">
-                Bật Gemini AI để chấm nghĩa linh hoạt &amp; tạo câu hỏi ngữ cảnh
-              </span>
+              <span className="truncate text-slate-600">Bật Gemini AI để chấm nghĩa thông minh</span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {geminiActive && (
               <>
                 <Button
@@ -254,7 +260,7 @@ export function LearnMode({
                   size="sm"
                   variant={useAiMode ? "default" : "outline"}
                   onClick={() => setAiModeOverride(!useAiMode)}
-                  className={`h-8 rounded-xl px-3 text-xs font-extrabold ${
+                  className={`h-7 rounded-xl px-2.5 text-[11px] font-extrabold sm:h-8 sm:px-3 sm:text-xs ${
                     useAiMode
                       ? "bg-[#7c3aed] text-white hover:bg-[#6d28d9]"
                       : "border-[var(--border)] bg-white text-slate-700"
@@ -268,18 +274,21 @@ export function LearnMode({
                   variant="outline"
                   disabled={generatingAi}
                   onClick={() => void handleGenerateAiQuestions()}
-                  className="h-8 gap-1 rounded-xl border-violet-200 bg-white px-3 text-xs font-extrabold text-[#6d28d9] hover:bg-violet-50"
+                  className="h-7 gap-1 rounded-xl border-violet-200 bg-white px-2.5 text-[11px] font-extrabold text-[#6d28d9] hover:bg-violet-50 sm:h-8 sm:px-3 sm:text-xs"
                 >
                   {generatingAi ? (
-                    <Loader2 size={13} className="animate-spin" />
+                    <Loader2 size={12} className="animate-spin" />
                   ) : (
-                    <Sparkles size={13} />
+                    <Sparkles size={12} />
                   )}
-                  {generatingAi
-                    ? "Đang tạo..."
-                    : aiQuestionsCount > 0
-                    ? "Tạo lại đề AI"
-                    : "Tạo câu hỏi AI"}
+                  <span className="sm:hidden">{generatingAi ? "Đang tạo..." : "Đề AI"}</span>
+                  <span className="hidden sm:inline">
+                    {generatingAi
+                      ? "Đang tạo..."
+                      : aiQuestionsCount > 0
+                      ? "Tạo lại đề AI"
+                      : "Tạo câu hỏi AI"}
+                  </span>
                 </Button>
               </>
             )}
@@ -288,10 +297,10 @@ export function LearnMode({
               size="sm"
               variant="ghost"
               onClick={onOpenGeminiSettings}
-              className="h-8 gap-1 rounded-xl px-2.5 text-xs font-bold text-slate-600 hover:bg-violet-50"
+              className="h-7 gap-1 rounded-xl px-2 text-[11px] font-bold text-slate-600 hover:bg-violet-50 sm:h-8 sm:px-2.5 sm:text-xs"
             >
               <Settings2 size={13} />
-              {geminiActive ? "Key" : "Cài API Key"}
+              <span className="hidden sm:inline">{geminiActive ? "Key" : "Cài API Key"}</span>
             </Button>
           </div>
         </div>
@@ -327,50 +336,50 @@ export function LearnMode({
         </div>
       ) : (
         <>
-          <div className="mb-4 grid grid-cols-3 gap-3">
+          <div className="mb-2.5 grid grid-cols-3 gap-2 sm:mb-4 sm:gap-3">
             <StudyStat label="Đúng" value={correctCount} color="#047857" />
             <StudyStat label="Sai" value={wrongCount} color="#dc2626" />
             <StudyStat label="Còn lại" value={remaining} color="#7c3aed" />
           </div>
           <Progress
             value={cards.length ? ((cards.length - remaining) / cards.length) * 100 : 0}
-            className="h-2.5 rounded-full"
+            className="h-2 rounded-full sm:h-2.5"
           />
 
-          <div className="clay-card mt-4 rounded-[30px] p-6 sm:p-8">
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 text-xs font-extrabold tracking-[.14em] text-[#6d28d9] uppercase">
+          <div className="clay-card mt-3 rounded-3xl p-4 sm:mt-4 sm:rounded-[30px] sm:p-8">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-[.12em] text-[#6d28d9] uppercase sm:text-xs sm:tracking-[.14em]">
                 {aiQuestion && <Sparkles size={13} />}
                 {kind === "multiple-choice" ? "Trắc nghiệm" : "Gõ đáp án"} ·{" "}
                 {direction === "en-vi" ? "EN → VI" : "VI → EN"}
               </span>
-              <span className="rounded-full bg-[#f7f3fd] px-3 py-1 text-xs font-extrabold text-slate-600">
+              <span className="rounded-full bg-[#f7f3fd] px-2.5 py-0.5 text-[11px] font-extrabold text-slate-600 sm:px-3 sm:py-1 sm:text-xs">
                 Đúng {mastery[card.id] || 0}/2
               </span>
             </div>
 
-            <h2 className="font-display my-8 text-center text-2xl font-bold text-slate-900 sm:text-3xl">
+            <h2 className="font-display my-4 text-center text-xl font-bold break-words text-slate-900 sm:my-7 sm:text-3xl">
               {promptText}
             </h2>
             {direction === "en-vi" && !aiQuestion && (
-              <div className="-mt-5 mb-7">
+              <div className="-mt-2 mb-4 sm:-mt-4 sm:mb-6">
                 <WordMeta card={card} />
               </div>
             )}
             {aiQuestion?.hint && (
-              <p className="-mt-4 mb-6 text-center text-xs font-bold text-[#6d28d9]">
+              <p className="-mt-2 mb-4 text-center text-xs font-bold text-[#6d28d9] sm:-mt-3 sm:mb-6">
                 Gợi ý: {aiQuestion.hint}
               </p>
             )}
 
             {kind === "multiple-choice" ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
                 {choices.map((choice) => (
                   <button
                     key={choice}
                     disabled={Boolean(feedback)}
                     onClick={() => void answer(choice)}
-                    className={`tap-press min-h-14 rounded-2xl border-[1.5px] p-4 text-left text-sm font-bold transition-all sm:text-base ${
+                    className={`tap-press min-h-11 rounded-2xl border-[1.5px] p-3 text-left text-sm font-bold break-words transition-all sm:min-h-14 sm:p-4 sm:text-base ${
                       feedback && normalizeAnswer(choice) === normalizeAnswer(feedback.expected)
                         ? "border-emerald-400 bg-emerald-50 text-emerald-800 shadow-xs"
                         : "border-[var(--border)] bg-[#fdfbff] text-slate-800 shadow-[var(--clay-shadow-soft)] hover:border-[#7c3aed] hover:bg-violet-50/50"

@@ -45,7 +45,7 @@ interface NotificationDialogProps {
 export function NotificationDialog(props: NotificationDialogProps) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="clay-card max-h-[88vh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-[28px] p-5 sm:p-6">
+      <DialogContent className="clay-card max-h-[88dvh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-[28px] p-5 sm:p-6">
         <DialogHeader className="pb-2 text-left">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-[#e04826] shadow-[inset_0_1.5px_0_rgba(255,255,255,0.85)]">

@@ -189,9 +189,9 @@ export function TestMode({
       {!cards.length ? (
         <StudyEmptyState title="Bộ thẻ đang trống" onBack={onBack} />
       ) : !questions.length ? (
-        <div className="clay-card rounded-[30px] p-6 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-2xl font-bold text-slate-900">Tạo bài kiểm tra</h2>
+        <div className="clay-card rounded-[26px] sm:rounded-[30px] p-4 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-slate-900">Tạo bài kiểm tra</h2>
             <Button
               type="button"
               size="sm"
@@ -290,12 +290,12 @@ export function TestMode({
           </Button>
         </div>
       ) : submitted ? (
-        <div className="space-y-4">
-          <div className="rounded-[30px] border border-violet-400/40 bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-7 text-center text-white shadow-[0_18px_36px_-10px_rgba(109,40,217,0.42),inset_0_2px_0_rgba(255,255,255,0.28)]">
+        <div className="space-y-3.5 sm:space-y-4">
+          <div className="rounded-[26px] sm:rounded-[30px] border border-violet-400/40 bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-5 sm:p-7 text-center text-white shadow-[0_18px_36px_-10px_rgba(109,40,217,0.42),inset_0_2px_0_rgba(255,255,255,0.28)]">
             <p className="text-xs font-extrabold tracking-widest text-violet-100 uppercase">
               Kết quả bài kiểm tra
             </p>
-            <p className="font-display mt-2 text-5xl font-bold">
+            <p className="font-display mt-2 text-4xl sm:text-5xl font-bold">
               {Math.round((correctCount / questions.length) * 100)}%
             </p>
             <p className="mt-2 text-sm font-bold text-violet-100">
@@ -304,7 +304,7 @@ export function TestMode({
           </div>
 
           {aiSummary && (
-            <div className="clay-card rounded-3xl border-violet-200 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/50 p-5">
+            <div className="clay-card rounded-2xl sm:rounded-3xl border-violet-200 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/50 p-4 sm:p-5">
               <div className="mb-2 flex items-center gap-2 text-xs font-extrabold tracking-wider text-[#6d28d9] uppercase">
                 <Sparkles size={15} />
                 <span>Nhận xét từ Gia sư Gemini ({geminiModel})</span>
@@ -335,11 +335,11 @@ export function TestMode({
           {results.map((result, index) => (
             <div
               key={result.question.key}
-              className={`clay-card rounded-3xl p-5 ${
+              className={`clay-card rounded-2xl sm:rounded-3xl p-4 sm:p-5 ${
                 result.correct ? "border-emerald-200" : "border-red-200"
               }`}
             >
-              <div className="flex gap-3">
+              <div className="flex gap-2.5 sm:gap-3">
                 <span
                   className={`grid size-7 shrink-0 place-items-center rounded-full text-sm font-black text-white ${
                     result.correct ? "bg-emerald-600" : "bg-red-600"
@@ -348,24 +348,24 @@ export function TestMode({
                   {index + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-base font-bold text-slate-900">
+                  <p className="font-display text-base font-bold text-slate-900 break-words">
                     {result.question.prompt}
                   </p>
-                  <p className="mt-2 text-sm font-medium text-slate-600">
+                  <p className="mt-2 text-sm font-medium text-slate-600 break-words">
                     Bạn trả lời:{" "}
                     <b className={result.correct ? "text-emerald-700" : "text-red-600"}>
                       {result.answer || "(bỏ trống)"}
                     </b>
                   </p>
                   {!result.correct && (
-                    <p className="mt-1 text-sm font-medium text-slate-600">
+                    <p className="mt-1 text-sm font-medium text-slate-600 break-words">
                       Đáp án đúng: <b className="text-emerald-700">{result.expected}</b>
                     </p>
                   )}
                   {(result.aiFeedback || result.question.explanation) && (
-                    <p className="clay-surface mt-2.5 flex items-start gap-2 rounded-2xl p-3 text-xs font-semibold text-slate-700">
+                    <p className="clay-surface mt-2.5 flex items-start gap-2 rounded-2xl p-3 text-xs font-semibold text-slate-700 break-words">
                       <Lightbulb size={14} className="mt-0.5 shrink-0 text-[#7c3aed]" />
-                      <span>{result.aiFeedback || result.question.explanation}</span>
+                      <span className="min-w-0">{result.aiFeedback || result.question.explanation}</span>
                     </p>
                   )}
                 </div>
@@ -416,19 +416,19 @@ export function TestMode({
           </div>
         </div>
       ) : (
-        <form onSubmit={(event) => void handleSubmitTest(event)} className="space-y-4">
+        <form onSubmit={(event) => void handleSubmitTest(event)} className="space-y-3.5 sm:space-y-4">
           {questions.map((question, index) => (
-            <div key={question.key} className="clay-card rounded-[28px] p-5 sm:p-6">
+            <div key={question.key} className="clay-card rounded-[24px] sm:rounded-[28px] p-4 sm:p-6">
               <p className="flex items-center gap-1.5 text-xs font-extrabold tracking-wide text-[#6d28d9]">
                 {testUsedAi && <Sparkles size={13} />}
                 CÂU {index + 1} ·{" "}
                 {question.kind === "multiple-choice" ? "TRẮC NGHIỆM" : "GÕ ĐÁP ÁN"}
               </p>
-              <h3 className="font-display my-4 text-xl font-bold text-slate-900">
+              <h3 className="font-display my-3 sm:my-4 text-lg sm:text-xl font-bold text-slate-900 break-words">
                 {question.prompt}
               </h3>
               {question.hint && (
-                <p className="mb-4 text-xs font-bold text-[#6d28d9]">
+                <p className="mb-3 sm:mb-4 text-xs font-bold text-[#6d28d9] break-words">
                   Gợi ý: {question.hint}
                 </p>
               )}
@@ -440,7 +440,7 @@ export function TestMode({
                     return (
                       <label
                         key={choice}
-                        className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-2xl border-[1.5px] p-3.5 text-sm font-bold transition-all ${
+                        className={`flex min-h-11 sm:min-h-12 cursor-pointer items-center gap-2.5 rounded-2xl border-[1.5px] p-3 sm:p-3.5 text-sm font-bold transition-all ${
                           checked
                             ? "border-[#7c3aed] bg-violet-50 text-[#5b21b6] shadow-xs"
                             : "border-[var(--border)] bg-[#fdfbff] text-slate-800 hover:border-violet-300"
@@ -453,9 +453,9 @@ export function TestMode({
                           onChange={() =>
                             setAnswers((current) => ({ ...current, [question.key]: choice }))
                           }
-                          className="accent-[#7c3aed]"
+                          className="shrink-0 accent-[#7c3aed]"
                         />
-                        <span>{choice}</span>
+                        <span className="min-w-0 break-words">{choice}</span>
                       </label>
                     );
                   })}

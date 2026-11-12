@@ -68,7 +68,7 @@ export function StreakUsagi({ reviews, todayCount, dueCount, week }: StreakUsagi
   }
 
   return (
-    <div className="clay-card rounded-[28px] border-orange-200/80 bg-gradient-to-br from-[#fffdf9] via-white to-[#fff6ed] p-5 sm:p-6">
+    <div className="clay-card min-w-0 rounded-[28px] border-orange-200/80 bg-gradient-to-br from-[#fffdf9] via-white to-[#fff6ed] p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100 pb-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#ff4d2e] via-[#ff6b4a] to-[#ffa114] text-white shadow-[0_8px_20px_-4px_rgba(255,107,74,0.45),inset_0_1.5px_0_rgba(255,255,255,0.4)]">

@@ -78,9 +78,9 @@ export function LibraryPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold text-slate-900">Thư viện của bạn</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 break-words">Thư viện của bạn</h1>
           <p className="mt-1 text-sm font-semibold text-slate-600">
             {data.decks.length} bộ thẻ · {data.cards.length} thẻ · Lưu trữ ngoại tuyến &amp; Đồng bộ
           </p>
@@ -226,8 +226,8 @@ export function LibraryPanel({
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-52">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-56">
                 <Search
                   size={15}
                   className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
@@ -245,7 +245,7 @@ export function LibraryPanel({
                 value={selectedDeckFilter}
                 onChange={(e) => setSelectedDeckFilter(e.target.value)}
                 aria-label="Lọc theo bộ thẻ"
-                className="h-10 rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3.5 text-xs font-bold text-slate-700"
+                className="h-10 w-full rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-3.5 text-xs font-bold text-slate-700 sm:w-auto"
               >
                 <option value="all">Tất cả bộ thẻ</option>
                 {data.decks.map((deck) => (

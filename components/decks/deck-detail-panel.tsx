@@ -96,17 +96,17 @@ export function DeckDetailPanel({
           >
             <ChevronLeft />
           </Button>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span
-                className="inline-block size-3 rounded-full"
+                className="inline-block size-3 shrink-0 rounded-full"
                 style={{ backgroundColor: deck.color }}
               />
               <p className="text-xs font-extrabold tracking-wider uppercase" style={{ color: deck.color }}>
                 Bộ thẻ
               </p>
             </div>
-            <h1 className="font-display text-3xl font-bold text-slate-900">{deck.name}</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 break-words">{deck.name}</h1>
             <p className="mt-1 text-sm font-semibold text-slate-600">
               {cards.length} thẻ · {dueCards.length} đến hạn · {hardCount} thẻ khó
             </p>
@@ -241,7 +241,7 @@ export function DeckDetailPanel({
                 </Button>
               </div>
 
-              <div className="relative min-w-56">
+              <div className="relative w-full sm:w-56">
                 <Search
                   size={15}
                   className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"

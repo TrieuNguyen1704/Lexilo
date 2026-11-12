@@ -52,12 +52,12 @@ export function TodayPanel({
           <Sparkles size={13} className="text-[#ff6b4a]" />
           <span>Chào bạn, giữ vững nhịp nhé</span>
         </span>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl">
           Hôm nay mình học gì?
         </h1>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <MetricCard
           icon={CalendarDays}
           label="Cần ôn hôm nay"
@@ -74,13 +74,13 @@ export function TodayPanel({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-        <div className="relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-6 text-white shadow-[0_18px_38px_-10px_rgba(109,40,217,0.45),inset_0_2px_0_rgba(255,255,255,0.28)] sm:p-7">
+        <div className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-[28px] border border-violet-400/40 bg-gradient-to-br from-[#7c3aed] via-[#6d28d9] to-[#5b21b6] p-5 text-white shadow-[0_18px_38px_-10px_rgba(109,40,217,0.45),inset_0_2px_0_rgba(255,255,255,0.28)] sm:p-7">
           <div className="flex items-start justify-between gap-4">
             <div className="relative z-10">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-extrabold tracking-wide text-white uppercase backdrop-blur-xs">
                 Ôn theo lịch FSRS
               </span>
-              <h2 className="font-display mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h2 className="font-display mt-4 sm:mt-5 text-2xl font-bold tracking-tight text-white sm:text-4xl">
                 {due.length ? `${due.length} thẻ đang chờ` : "Không có thẻ đến hạn"}
               </h2>
               <p className="mt-2.5 max-w-md text-sm leading-relaxed font-medium text-violet-100">

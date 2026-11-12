@@ -101,15 +101,18 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
             onFlip={() => setRevealed((value) => !value)}
             footerContent={
               <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-500">
-                <span>Nhấp thẻ hoặc bấm</span>
-                <kbd className="rounded-lg border border-[var(--border)] bg-[#f7f3fd] px-2 py-0.5 font-mono text-slate-700 shadow-2xs">
-                  Space
-                </kbd>
-                <span>để hiện đáp án</span>
+                <span className="sm:hidden">Chạm thẻ để xem đáp án</span>
+                <span className="hidden items-center gap-2 sm:inline-flex">
+                  <span>Nhấp thẻ hoặc bấm</span>
+                  <kbd className="rounded-lg border border-[var(--border)] bg-[#f7f3fd] px-2 py-0.5 font-mono text-slate-700 shadow-2xs">
+                    Space
+                  </kbd>
+                  <span>để hiện đáp án</span>
+                </span>
               </div>
             }
             backFooterContent={
-              <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-500">
+              <div className="hidden items-center justify-center gap-1.5 text-xs font-bold text-slate-500 sm:flex">
                 <span>Bấm phím số</span>
                 {["1", "2", "3", "4"].map((k) => (
                   <kbd
@@ -124,31 +127,31 @@ export function ScheduledStudy({ cards, title, onRate, onBack }: ScheduledStudyP
             }
           />
 
-          <div className="mt-5">
+          <div className="mt-3.5 sm:mt-5">
             {!revealed ? (
               <div className="flex flex-col gap-2.5 sm:flex-row">
                 <Button
                   onClick={() => setRevealed(true)}
-                  className="clay-cta h-14 flex-1 rounded-2xl bg-[#7c3aed] text-base font-extrabold text-white hover:bg-[#6d28d9]"
+                  className="clay-cta h-12 flex-1 rounded-2xl bg-[#7c3aed] text-sm font-extrabold text-white hover:bg-[#6d28d9] sm:h-14 sm:text-base"
                 >
                   Hiện đáp án{" "}
-                  <kbd className="ml-2 rounded-lg bg-white/20 px-2 py-0.5 font-mono text-xs">
+                  <kbd className="ml-2 hidden rounded-lg bg-white/20 px-2 py-0.5 font-mono text-xs sm:inline">
                     Space
                   </kbd>
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-600">
                   <span>Đánh giá mức độ ghi nhớ:</span>
-                  <span>Phím tắt [1 - 4]</span>
+                  <span className="hidden sm:inline">Phím tắt [1 - 4]</span>
                 </div>
                 <RatingButtons onRate={(r) => void rate(r)} disabled={busy} />
               </div>
             )}
           </div>
 
-          <div className="clay-surface mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600">
+          <div className="clay-surface mt-4 hidden flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600 sm:flex">
             <span className="flex items-center gap-1">
               <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 Space

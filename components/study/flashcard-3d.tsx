@@ -29,9 +29,9 @@ function SpeakButton({ card }: { card: Card }) {
         speakCard(card);
       }}
       aria-label={`Phát âm ${card.front}`}
-      className="tap-press grid size-10 place-items-center rounded-2xl bg-violet-50 text-[#6d28d9] transition hover:bg-violet-100"
+      className="tap-press grid size-10 shrink-0 place-items-center rounded-2xl bg-violet-50 text-[#6d28d9] transition hover:bg-violet-100"
     >
-      <Volume2 size={21} />
+      <Volume2 size={20} />
     </button>
   );
 }
@@ -39,8 +39,10 @@ function SpeakButton({ card }: { card: Card }) {
 function ExampleBox({ example }: { example: string }) {
   if (!example) return null;
   return (
-    <div className="clay-surface mt-5 rounded-2xl p-3.5">
-      <p className="text-sm font-medium text-slate-700 italic">“{example}”</p>
+    <div className="clay-surface mt-3.5 rounded-2xl p-3 sm:mt-5 sm:p-3.5">
+      <p className="text-xs font-medium break-words text-slate-700 italic sm:text-sm">
+        “{example}”
+      </p>
     </div>
   );
 }
@@ -67,7 +69,7 @@ export function Flashcard3D({
 
   return (
     <div
-      className="perspective-1000 min-h-[420px] w-full cursor-pointer rounded-[32px] select-none"
+      className="perspective-1000 min-h-[260px] w-full cursor-pointer rounded-[28px] select-none sm:min-h-[380px] sm:rounded-[32px]"
       onClick={() => {
         triggerHaptic(8);
         onFlip();
@@ -79,23 +81,27 @@ export function Flashcard3D({
       aria-label="Thẻ ghi nhớ. Bấm phím Space hoặc nhấp chuột để lật thẻ."
     >
       <div
-        className={`transform-style-3d relative min-h-[420px] w-full rounded-[32px] transition-transform duration-500 ${
+        className={`transform-style-3d relative min-h-[260px] w-full rounded-[28px] transition-transform duration-500 sm:min-h-[380px] sm:rounded-[32px] ${
           flipped ? "rotate-y-180" : ""
         }`}
       >
-        <div className="backface-hidden clay-card absolute inset-0 flex flex-col justify-between rounded-[32px] p-7 text-center sm:p-10">
-          <div className="flex items-center justify-between text-xs font-extrabold tracking-[.16em] text-[#6d28d9] uppercase">
+        <div
+          className={`backface-hidden rotate-y-0 clay-card absolute inset-0 flex flex-col justify-between overflow-hidden rounded-[28px] p-5 text-center sm:rounded-[32px] sm:p-9 ${
+            flipped ? "pointer-events-none" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between text-[11px] font-extrabold tracking-[.14em] text-[#6d28d9] uppercase sm:text-xs">
             <span>{frontLabel}</span>
-            <span className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[#f7f3fd] px-3 py-1 font-mono text-[11px] font-bold text-slate-600">
+            <span className="hidden items-center gap-1 rounded-full border border-[var(--border)] bg-[#f7f3fd] px-3 py-1 font-mono text-[11px] font-bold text-slate-600 sm:flex">
               <kbd>Space</kbd> để lật
             </span>
           </div>
 
-          <div className="my-auto py-6">
+          <div className="my-auto max-h-full overflow-y-auto py-3 sm:py-5">
             {showEnglishOnFront ? (
               <div>
-                <div className="flex items-center justify-center gap-3">
-                  <h2 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+                <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+                  <h2 className="font-display text-2xl font-bold break-words text-slate-900 sm:text-4xl">
                     {card.front}
                   </h2>
                   <SpeakButton card={card} />
@@ -104,7 +110,7 @@ export function Flashcard3D({
               </div>
             ) : (
               <div>
-                <span className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+                <span className="font-display text-2xl font-bold break-words text-slate-900 sm:text-4xl">
                   {card.back}
                 </span>
               </div>
@@ -115,21 +121,23 @@ export function Flashcard3D({
         </div>
 
         <div
-          className={`backface-hidden rotate-y-180 clay-card absolute inset-0 flex flex-col justify-between rounded-[32px] p-7 text-center sm:p-10 ${backBorderAndGradient}`}
+          className={`backface-hidden rotate-y-180 clay-card absolute inset-0 flex flex-col justify-between overflow-hidden rounded-[28px] p-5 text-center sm:rounded-[32px] sm:p-9 ${backBorderAndGradient} ${
+            flipped ? "" : "pointer-events-none"
+          }`}
         >
           <div
-            className={`flex items-center justify-between text-xs font-extrabold tracking-[.16em] uppercase ${backLabelColor}`}
+            className={`flex items-center justify-between text-[11px] font-extrabold tracking-[.14em] uppercase sm:text-xs ${backLabelColor}`}
           >
             <span>{backLabel}</span>
-            <span className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[#f7f3fd] px-3 py-1 font-mono text-[11px] font-bold text-slate-600">
+            <span className="hidden items-center gap-1 rounded-full border border-[var(--border)] bg-[#f7f3fd] px-3 py-1 font-mono text-[11px] font-bold text-slate-600 sm:flex">
               <kbd>Space</kbd> lật lại
             </span>
           </div>
 
-          <div className="my-auto py-6">
+          <div className="my-auto max-h-full overflow-y-auto py-3 sm:py-5">
             {showEnglishOnFront ? (
               <div>
-                <p className="font-display text-3xl font-bold text-[#047857] sm:text-4xl">
+                <p className="font-display text-2xl font-bold break-words text-[#047857] sm:text-4xl">
                   {card.back}
                 </p>
                 {backAccentVariant === "emerald" && <WordMeta card={card} />}
@@ -137,8 +145,8 @@ export function Flashcard3D({
               </div>
             ) : (
               <div>
-                <div className="flex items-center justify-center gap-3">
-                  <span className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+                <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+                  <span className="font-display text-2xl font-bold break-words text-slate-900 sm:text-4xl">
                     {card.front}
                   </span>
                   <SpeakButton card={card} />

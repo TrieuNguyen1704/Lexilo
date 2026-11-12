@@ -51,7 +51,7 @@ export function AddCardDialog({
         aria-labelledby="add-card-title"
         onSubmit={submit}
         onMouseDown={(event) => event.stopPropagation()}
-        className="clay-card max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] p-5 sm:p-7"
+        className="clay-card max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-[28px] p-5 sm:p-7"
       >
         <div className="flex items-center justify-between gap-4">
           <div>

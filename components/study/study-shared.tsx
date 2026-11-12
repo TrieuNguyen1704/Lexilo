@@ -44,22 +44,24 @@ export function ModeHeader({
   trailing?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3.5">
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 sm:mb-5 sm:gap-3">
+      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
         <Button
           variant="outline"
           size="icon"
           onClick={onBack}
           aria-label="Quay lại"
-          className="tap-press size-10 shrink-0 rounded-2xl border-[1.5px] border-[var(--border)] bg-white shadow-[var(--clay-shadow-soft)]"
+          className="tap-press size-9 shrink-0 rounded-xl border-[1.5px] border-[var(--border)] bg-white shadow-[var(--clay-shadow-soft)] sm:size-10 sm:rounded-2xl"
         >
-          <ChevronLeft />
+          <ChevronLeft size={18} />
         </Button>
         <div className="min-w-0">
-          <h1 className="font-display truncate text-2xl font-bold text-slate-900 sm:text-3xl">
+          <h1 className="font-display truncate text-xl font-bold text-slate-900 sm:text-3xl">
             {title}
           </h1>
-          <p className="mt-0.5 text-sm font-semibold text-slate-600">{subtitle}</p>
+          <p className="mt-0.5 truncate text-xs font-semibold text-slate-600 sm:text-sm">
+            {subtitle}
+          </p>
         </div>
       </div>
       {trailing}
@@ -125,15 +127,17 @@ export function RatingButtons({
             triggerHaptic(12);
             onRate(rating);
           }}
-          className={`tap-press group relative rounded-2xl border-2 border-b-4 p-3 text-center font-black shadow-[0_6px_14px_-4px_rgba(15,23,42,0.08),inset_0_1.5px_0_rgba(255,255,255,0.85)] transition-all hover:-translate-y-0.5 active:translate-y-[2px] disabled:opacity-50 sm:p-3.5 ${styleClass}`}
+          className={`tap-press group relative rounded-2xl border-2 border-b-4 p-2.5 text-center font-black shadow-[0_6px_14px_-4px_rgba(15,23,42,0.08),inset_0_1.5px_0_rgba(255,255,255,0.85)] transition-all hover:-translate-y-0.5 active:translate-y-[2px] disabled:opacity-50 sm:p-3.5 ${styleClass}`}
         >
           <div className="flex items-center justify-center gap-1.5">
-            <kbd className="inline-flex size-5 items-center justify-center rounded-md border border-current/20 bg-white/85 font-mono text-[11px] font-bold shadow-2xs">
+            <kbd className="hidden size-5 items-center justify-center rounded-md border border-current/20 bg-white/85 font-mono text-[11px] font-bold shadow-2xs sm:inline-flex">
               {shortcut}
             </kbd>
-            <span className="font-display text-base font-bold">{label}</span>
+            <span className="font-display text-sm font-bold sm:text-base">{label}</span>
           </div>
-          <span className="mt-1 block text-xs font-bold opacity-85">{hint}</span>
+          <span className="mt-0.5 block text-[11px] font-bold opacity-85 sm:mt-1 sm:text-xs">
+            {hint}
+          </span>
         </button>
       ))}
     </div>
@@ -155,32 +159,32 @@ export function StudyFeedback({
 }) {
   return (
     <div
-      className={`mt-5 rounded-3xl border-[1.5px] p-4 shadow-[var(--clay-shadow-soft)] ${
+      className={`mt-3.5 sm:mt-5 rounded-2xl sm:rounded-3xl border-[1.5px] p-3 sm:p-4 shadow-[var(--clay-shadow-soft)] ${
         correct
           ? "border-emerald-200 bg-emerald-50/90 text-emerald-900"
           : "border-red-200 bg-red-50/90 text-red-900"
       }`}
     >
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-start gap-2.5 sm:gap-3">
         <span
-          className={`grid size-8 shrink-0 place-items-center rounded-xl text-white ${
+          className={`grid size-7 sm:size-8 shrink-0 place-items-center rounded-xl text-white ${
             correct ? "bg-emerald-600" : "bg-red-600"
           }`}
         >
-          {correct ? <Check size={17} strokeWidth={2.75} /> : <X size={17} strokeWidth={2.75} />}
+          {correct ? <Check size={16} strokeWidth={2.75} /> : <X size={16} strokeWidth={2.75} />}
         </span>
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <b className="font-display text-base font-bold">{correct ? "Chính xác!" : "Chưa đúng"}</b>
+        <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
+          <b className="font-display text-sm sm:text-base font-bold">{correct ? "Chính xác!" : "Chưa đúng"}</b>
           {!correct && (
-            <p className="text-sm font-medium">
+            <p className="text-xs sm:text-sm font-medium break-words">
               Đáp án: <b className="font-extrabold">{expected}</b>
             </p>
           )}
-          {aiNote && <p className="text-xs font-semibold opacity-90">{aiNote}</p>}
+          {aiNote && <p className="text-xs font-semibold opacity-90 break-words">{aiNote}</p>}
           {aiExplanation && (
-            <p className="flex items-start gap-1.5 rounded-2xl bg-white/80 px-3 py-2 text-xs font-semibold text-slate-700">
+            <p className="flex items-start gap-1.5 rounded-2xl bg-white/80 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs font-semibold text-slate-700 break-words">
               <Lightbulb size={14} className="mt-0.5 shrink-0 text-[#7c3aed]" />
-              <span>{aiExplanation}</span>
+              <span className="min-w-0">{aiExplanation}</span>
             </p>
           )}
         </div>
@@ -188,7 +192,7 @@ export function StudyFeedback({
           type="button"
           size="sm"
           onClick={onContinue}
-          className="clay-cta h-10 shrink-0 rounded-2xl bg-[#7c3aed] px-4 font-bold text-white hover:bg-[#6d28d9]"
+          className="clay-cta h-9 sm:h-10 w-full sm:w-auto shrink-0 rounded-2xl bg-[#7c3aed] px-4 font-bold text-white hover:bg-[#6d28d9]"
         >
           Tiếp tục
           <ChevronRight size={16} />
@@ -311,11 +315,11 @@ export function StudyStat({
   color: string;
 }) {
   return (
-    <div className="clay-card rounded-3xl p-3.5 text-center">
-      <b className="font-display block text-2xl font-bold sm:text-[28px]" style={{ color }}>
+    <div className="clay-card rounded-2xl p-2 text-center sm:rounded-3xl sm:p-3.5">
+      <b className="font-display block text-lg font-bold sm:text-[28px]" style={{ color }}>
         {value}
       </b>
-      <span className="text-xs font-bold text-slate-600">{label}</span>
+      <span className="text-[11px] font-bold text-slate-600 sm:text-xs">{label}</span>
     </div>
   );
 }

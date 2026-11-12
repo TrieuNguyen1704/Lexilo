@@ -351,7 +351,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-transparent text-foreground">
+    <main className="min-h-[100dvh] overflow-x-clip bg-transparent text-foreground">
       <AppHeader
         todayCount={todayCount}
         dueCount={due.length}
@@ -365,7 +365,7 @@ export default function Home() {
         onQuickAddCard={() => selectedDeck && setAddingCardToDeck(selectedDeck)}
       />
 
-      <div className="mx-auto grid max-w-[1280px] gap-7 px-4 py-5 sm:px-6 sm:py-7 md:grid-cols-[224px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1280px] gap-5 px-3.5 py-4 sm:gap-7 sm:px-6 sm:py-7 md:grid-cols-[224px_minmax(0,1fr)]">
         <DesktopSidebar
           currentScreen={screen}
           dueCount={due.length}

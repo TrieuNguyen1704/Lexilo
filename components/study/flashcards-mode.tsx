@@ -168,29 +168,32 @@ export function FlashcardsMode({
   function renderDifficultFooter(hintText: string) {
     if (!card) return null;
     return (
-      <div className="flex items-center justify-between border-t border-[var(--border)] pt-3">
+      <div className="flex items-center justify-between border-t border-[var(--border)] pt-2.5 sm:pt-3">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             void onToggleDifficult(card);
           }}
-          className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition ${
+          className={`inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold transition sm:min-h-9 sm:px-3.5 sm:py-1.5 ${
             card.isDifficult
               ? "bg-amber-100 text-amber-800"
               : "bg-[#f7f3fd] text-slate-600 hover:bg-violet-100/70"
           }`}
         >
-          <Flag size={14} className={card.isDifficult ? "fill-amber-400 text-amber-500" : ""} />
+          <Flag size={13} className={card.isDifficult ? "fill-amber-400 text-amber-500" : ""} />
           {card.isDifficult ? "Đã đánh dấu Khó" : "Đánh dấu Khó"}
-          <kbd className="ml-1 font-mono text-[10px] opacity-65">[F]</kbd>
+          <kbd className="ml-1 hidden font-mono text-[10px] opacity-65 sm:inline">[F]</kbd>
         </button>
-        <span className="text-xs font-bold text-slate-500">
-          Bấm{" "}
-          <kbd className="rounded-md border border-[var(--border)] bg-[#f7f3fd] px-1.5 py-0.5 font-mono text-slate-700">
-            Space
-          </kbd>{" "}
-          {hintText}
+        <span className="text-[11px] font-bold text-slate-500 sm:text-xs">
+          <span className="sm:hidden">Chạm để lật · Vuốt trái/phải</span>
+          <span className="hidden sm:inline">
+            Bấm{" "}
+            <kbd className="rounded-md border border-[var(--border)] bg-[#f7f3fd] px-1.5 py-0.5 font-mono text-slate-700">
+              Space
+            </kbd>{" "}
+            {hintText}
+          </span>
         </span>
       </div>
     );
@@ -204,7 +207,7 @@ export function FlashcardsMode({
         onBack={onBack}
       />
 
-      <div className="clay-card mb-4 grid gap-2.5 rounded-3xl p-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="clay-card mb-3 grid gap-2 rounded-2xl p-3 sm:mb-4 sm:grid-cols-2 sm:gap-2.5 sm:rounded-3xl sm:p-3.5 lg:grid-cols-4">
         <StudyControl label="Mặt trước">
           <select
             value={direction}
@@ -213,7 +216,7 @@ export function FlashcardsMode({
               setFlipped(false);
             }}
             aria-label="Chiều hiển thị"
-            className="h-10 w-full rounded-2xl border-[1.5px] border-[var(--border)] bg-white px-2.5 text-xs font-bold text-slate-800"
+            className="h-9 w-full rounded-xl border-[1.5px] border-[var(--border)] bg-white px-2.5 text-xs font-bold text-slate-800 sm:h-10 sm:rounded-2xl"
           >
             <option value="en-vi">English → Vietnamese</option>
             <option value="vi-en">Vietnamese → English</option>
@@ -314,34 +317,34 @@ export function FlashcardsMode({
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-3 gap-2.5">
+          <div className="mt-3.5 grid grid-cols-3 gap-2 sm:mt-4 sm:gap-2.5">
             <Button
               variant="outline"
               disabled={safeIndex === 0}
               onClick={previous}
-              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold text-slate-700"
+              className="tap-press h-10 rounded-2xl border-[var(--border)] bg-white px-2 text-xs font-bold text-slate-700 sm:h-11 sm:px-4 sm:text-sm"
             >
-              <ArrowLeft size={16} /> Thẻ trước{" "}
+              <ArrowLeft size={15} /> <span className="truncate">Trước</span>
               <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">←</kbd>
             </Button>
             <Button
               variant="outline"
               onClick={() => restart(true, onlyDifficult)}
-              className="tap-press h-11 rounded-2xl border-[var(--border)] bg-white font-bold text-slate-700"
+              className="tap-press h-10 rounded-2xl border-[var(--border)] bg-white px-2 text-xs font-bold text-slate-700 sm:h-11 sm:px-4 sm:text-sm"
             >
-              <Shuffle size={16} /> Xáo trộn
+              <Shuffle size={15} /> <span className="truncate">Xáo trộn</span>
             </Button>
             <Button
               onClick={next}
-              className="clay-cta h-11 rounded-2xl bg-[#7c3aed] font-bold text-white hover:bg-[#6d28d9]"
+              className="clay-cta h-10 rounded-2xl bg-[#7c3aed] px-2 text-xs font-bold text-white hover:bg-[#6d28d9] sm:h-11 sm:px-4 sm:text-sm"
             >
-              Tiếp theo{" "}
+              <span className="truncate">Tiếp</span>
               <kbd className="ml-1 hidden font-mono text-xs opacity-60 sm:inline">→</kbd>{" "}
-              <ArrowRight size={16} />
+              <ArrowRight size={15} />
             </Button>
           </div>
 
-          <div className="clay-surface mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600">
+          <div className="clay-surface mt-4 hidden flex-wrap items-center justify-center gap-x-4 gap-y-1.5 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600 sm:flex">
             <span className="flex items-center gap-1">
               <kbd className="rounded-md border border-[var(--border)] bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-700">
                 Space
