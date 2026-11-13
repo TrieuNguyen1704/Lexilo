@@ -9,6 +9,11 @@ import {
   DEFAULT_GEMINI_MODEL,
   forwardGeminiGenerateContent,
 } from "./lib/services/gemini-proxy.mjs";
+import {
+  savePushSubscription,
+  sendPushToSubscription,
+  dispatchScheduledReminders,
+} from "./lib/services/push-hub.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const localEnvPath = path.join(root, ".env.local");
@@ -599,8 +604,102 @@ async function handleApi(req, res, url) {
     }
   }
 
+  if (req.method === "POST" && url.pathname === "/api/push/subscribe") {
+    try {
+      const payload = await readBody(req);
+      const endpoint = payload.subscription?.endpoint?.trim();
+      const p256dh = payload.subscription?.keys?.p256dh?.trim();
+      const auth = payload.subscription?.keys?.auth?.trim();
+
+      if (!endpoint || !p256dh || !auth) {
+        return sendError(res, 400, "Thông tin Web Push không hợp lệ.");
+      }
+
+      const result = await savePushSubscription({
+        endpoint,
+        keys: { p256dh, auth },
+        reminderTime: typeof payload.reminderTime === "string" ? payload.reminderTime : "20:00",
+        timezoneOffset: typeof payload.timezoneOffset === "number" ? payload.timezoneOffset : -420,
+        dailyEnabled: payload.dailyEnabled ?? true,
+        realtimeEnabled: payload.realtimeEnabled ?? true,
+        dueCount: typeof payload.dueCount === "number" ? payload.dueCount : 0,
+        updatedAt: new Date().toISOString(),
+      });
+
+      if (!result.success) {
+        return sendError(res, 500, result.error || "Không thể lưu đăng ký Web Push.");
+      }
+
+      return sendJson(res, { success: true });
+    } catch (err) {
+      return sendError(res, 500, err?.message || "Lỗi lưu đăng ký push.");
+    }
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/push/test") {
+    try {
+      const payload = await readBody(req);
+      const endpoint = payload.subscription?.endpoint?.trim();
+      const p256dh = payload.subscription?.keys?.p256dh?.trim();
+      const auth = payload.subscription?.keys?.auth?.trim();
+
+      if (!endpoint || !p256dh || !auth) {
+        return sendError(res, 400, "Thông tin Web Push không hợp lệ.");
+      }
+
+      const delay = Math.min(10, Math.max(0, Number(payload.delaySeconds) || 0));
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay * 1000));
+      }
+
+      const result = await sendPushToSubscription(
+        {
+          endpoint,
+          keys: { p256dh, auth },
+          reminderTime: "20:00",
+          timezoneOffset: -420,
+          dailyEnabled: true,
+          realtimeEnabled: true,
+          dueCount: payload.dueCount || 0,
+        },
+        {
+          title: "Lexilo — Kiểm tra thông báo nền 🔔",
+          body: `Hệ thống Web Push hoạt động tốt! Bạn có ${payload.dueCount || 0} thẻ cần ôn tập.`,
+          url: "/",
+          tag: "lexilo-test-push",
+        },
+      );
+
+      if (!result.success) {
+        return sendError(res, 500, result.error || "Lỗi gửi thông báo Web Push thử nghiệm.");
+      }
+
+      return sendJson(res, { success: true });
+    } catch (err) {
+      return sendError(res, 500, err?.message || "Lỗi gửi thông báo thử.");
+    }
+  }
+
+  if (
+    (req.method === "GET" || req.method === "POST") &&
+    (url.pathname === "/api/cron/reminders" || url.pathname === "/api/push/cron")
+  ) {
+    try {
+      const force = url.searchParams.get("force") === "true";
+      const dispatched = await dispatchScheduledReminders(force);
+      return sendJson(res, { success: true, dispatched });
+    } catch (err) {
+      return sendError(res, 500, err?.message || "Lỗi xử lý cron gửi thông báo.");
+    }
+  }
+
   return false;
 }
+
+// Background scheduler for local server mode
+setInterval(() => {
+  dispatchScheduledReminders().catch(() => {});
+}, 60_000);
 
 const dev = process.argv.includes("--dev");
 const vite = dev

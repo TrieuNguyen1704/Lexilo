@@ -86,12 +86,18 @@ self.addEventListener("fetch", (event) => {
 // Handle notification click: focus or open app window
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+  const targetUrl =
+    event.notification.data && event.notification.data.url
+      ? event.notification.data.url
+      : "/";
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && "focus" in client) {
+          if ("navigate" in client && targetUrl !== "/") {
+            client.navigate(targetUrl);
+          }
           return client.focus();
         }
       }
@@ -102,11 +108,12 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Handle push notification event
+// Handle push notification event (Web Push from server even when app is closed)
 self.addEventListener("push", (event) => {
-  let title = "Lexilo - Ôn tập từ vựng";
-  let body = "Bạn có thẻ từ vựng cần ôn tập hôm nay!";
+  let title = "Lexilo — Đã đến giờ ôn tập! 📚";
+  let body = "Bạn có từ vựng cần ôn tập hôm nay. Dành 5 phút để hoàn thành nhé!";
   let url = "/";
+  let tag = "lexilo-study-reminder";
 
   if (event.data) {
     try {
@@ -114,25 +121,33 @@ self.addEventListener("push", (event) => {
       title = json.title || title;
       body = json.body || body;
       url = json.url || url;
+      tag = json.tag || tag;
     } catch {
       body = event.data.text() || body;
     }
   }
 
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: "/icon-192.svg",
-      badge: "/icon-192.svg",
-      data: { url },
-      tag: "lexilo-study-reminder",
-    })
-  );
+  const options = {
+    body,
+    icon: "/icon-192.svg",
+    badge: "/icon-192.svg",
+    data: { url },
+    tag,
+    renotify: true,
+    vibrate: [200, 100, 200],
+    actions: [
+      { action: "open_study", title: "Ôn ngay 🧠" },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Message handler for client commands
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SHOW_NOTIFICATION") {
+  if (!event.data) return;
+
+  if (event.data.type === "SHOW_NOTIFICATION") {
     const { title, options } = event.data;
     self.registration.showNotification(title, options);
   }

@@ -13,9 +13,26 @@ export const STORAGE_KEYS = {
   NOTIF_CUSTOM_TIME: "lexilo_reminder_custom_time",
   NOTIF_LAST_DAILY_DATE: "lexilo_last_daily_date",
   NOTIF_CARD_IDS: "lexilo_notified_card_ids",
+  PUSH_SUBSCRIPTION: "lexilo_push_subscription",
   GEMINI_API_KEY: "lexilo_gemini_api_key",
   GEMINI_MODEL: "lexilo_gemini_model",
   GEMINI_ENABLED: "lexilo_gemini_enabled",
+} as const;
+
+export const VAPID_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+  "BJZGuP6Qe3Pd4uDYYBOH59qxZ3NACT3D-BclcEqTZ7bMckSup16mGwCRZvgBd-cmJB_TfX7j8JL4UfIv4j7KcEs";
+
+export const VAPID_PRIVATE_KEY =
+  process.env.VAPID_PRIVATE_KEY ||
+  "UAE6Uis8oZnjCXeS53Vfh6vERWG7u3oK_evwDO0u-JQ";
+
+export const VAPID_SUBJECT =
+  process.env.VAPID_SUBJECT || "mailto:support@lexilo.app";
+
+export const SYSTEM_PUSH_HUB = {
+  EMAIL: "system_push_hub@lexilo.internal",
+  PASS: "LexiloPushSystemHub2026!",
 } as const;
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";

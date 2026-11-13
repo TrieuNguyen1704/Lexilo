@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { checkAllNotifications } from "@/lib/services/notifications";
+import { checkAllNotifications, syncPushSubscription } from "@/lib/services/notifications";
 import type { Card } from "@/types/lexilo";
 
 export function useStudyNotifications(ready: boolean, cards: Card[]) {
@@ -9,7 +9,13 @@ export function useStudyNotifications(ready: boolean, cards: Card[]) {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     const registerSw = () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => {
+          const dueCount = cards.filter((c) => c.due <= Date.now()).length;
+          void syncPushSubscription(dueCount);
+        })
+        .catch(() => {});
     };
 
     if (document.readyState === "complete" || document.readyState === "interactive") {
@@ -19,7 +25,7 @@ export function useStudyNotifications(ready: boolean, cards: Card[]) {
 
     window.addEventListener("load", registerSw);
     return () => window.removeEventListener("load", registerSw);
-  }, []);
+  }, [cards]);
 
   useEffect(() => {
     if (!ready) return;
@@ -29,6 +35,18 @@ export function useStudyNotifications(ready: boolean, cards: Card[]) {
       void checkAllNotifications(cards);
     }, 30_000);
 
-    return () => window.clearInterval(interval);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        void checkAllNotifications(cards);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [ready, cards]);
 }
+

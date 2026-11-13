@@ -28,9 +28,11 @@ import {
   isRealtimeNotifEnabled,
   requestNotificationPermission,
   sendNotification,
+  sendTestWebPush,
   setCustomReminderTime,
   setDailyReminderEnabled,
   setRealtimeNotifEnabled,
+  syncPushSubscription,
 } from "@/lib/services/notifications";
 import type { Notice } from "@/types/lexilo";
 import type { NotificationStatus } from "@/types/navigation";
@@ -102,6 +104,7 @@ function NotificationBody({
     const nextVal = !realtimeEnabled;
     setRealtimeEnabled(nextVal);
     setRealtimeNotifEnabled(nextVal);
+    void syncPushSubscription(dueCount);
     onNotice(
       "success",
       nextVal
@@ -114,6 +117,7 @@ function NotificationBody({
     const nextVal = !dailyEnabled;
     setDailyEnabled(nextVal);
     setDailyReminderEnabled(nextVal);
+    void syncPushSubscription(dueCount);
     onNotice(
       "success",
       nextVal
@@ -126,6 +130,7 @@ function NotificationBody({
     if (!val) return;
     setCustomTime(val);
     setCustomReminderTime(val);
+    void syncPushSubscription(dueCount);
     onNotice("success", `Đã lưu giờ nhắc nhở mỗi ngày: ${val}`);
   }
 
@@ -143,6 +148,25 @@ function NotificationBody({
       }
     } catch {
       onNotice("error", "Lỗi gửi thông báo thử.");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  async function handleTestWebPush() {
+    setTesting(true);
+    try {
+      const res = await sendTestWebPush(3, dueCount);
+      if (res.success) {
+        onNotice(
+          "success",
+          "Đã hẹn gửi thông báo đẩy sau 3 giây! Hãy khóa màn hình điện thoại hoặc chuyển tab ngay bây giờ để kiểm tra.",
+        );
+      } else {
+        onNotice("error", res.error || "Lỗi gửi thông báo đẩy từ máy chủ.");
+      }
+    } catch {
+      onNotice("error", "Không thể kích hoạt thông báo đẩy.");
     } finally {
       setTesting(false);
     }
@@ -283,20 +307,44 @@ function NotificationBody({
         </div>
 
         {status === "granted" && (
-          <Button
-            variant="outline"
-            onClick={handleTestNotification}
-            disabled={testing}
-            className="tap-press mt-1 h-10 w-full gap-2 rounded-2xl border-[var(--border)] bg-white text-xs font-extrabold text-slate-800"
-          >
-            <Send className="h-3.5 w-3.5 text-[#7c3aed]" />
-            {testing ? "Đang gửi..." : "Gửi thử 1 thông báo để kiểm tra chuông"}
-          </Button>
+          <div className="space-y-2 pt-1">
+            <Button
+              variant="outline"
+              onClick={handleTestWebPush}
+              disabled={testing}
+              className="tap-press h-10 w-full gap-2 rounded-2xl border-violet-200 bg-violet-50/60 text-xs font-extrabold text-[#6d28d9] hover:bg-violet-100/70"
+            >
+              <Send className="h-3.5 w-3.5 text-[#7c3aed]" />
+              {testing
+                ? "Đang lên lịch..."
+                : "Thử thông báo đẩy Web Push (Khóa máy sau 3s để thử)"}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleTestNotification}
+              disabled={testing}
+              className="tap-press h-8 w-full text-xs font-bold text-slate-500 hover:text-slate-800"
+            >
+              Kiểm tra thông báo cục bộ ngay lập tức
+            </Button>
+          </div>
         )}
 
-        <div className="flex items-center gap-2 rounded-2xl bg-violet-50/70 p-3 text-[11px] font-medium text-slate-600">
-          <Smartphone className="h-4 w-4 shrink-0 text-[#6d28d9]" />
-          <span>Mẹo: Icon Lexilo ngoài Màn hình chính sẽ có chấm đỏ đếm số từ cần học.</span>
+        <div className="space-y-2 rounded-2xl bg-violet-50/70 p-3 text-[11px] font-medium text-slate-600">
+          <div className="flex items-start gap-2">
+            <Smartphone className="h-4 w-4 shrink-0 text-[#6d28d9] mt-0.5" />
+            <div>
+              <p className="font-bold text-slate-800">
+                Nhận thông báo khi tắt tab &amp; đóng ứng dụng:
+              </p>
+              <p className="mt-0.5 text-slate-600">
+                - <strong>iPhone/iPad</strong>: Mở Safari → nhấn biểu tượng <strong>Chia sẻ (Share)</strong> → chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> → Mở app Lexilo từ màn hình chính và cấp quyền thông báo.
+              </p>
+              <p className="mt-0.5 text-slate-600">
+                - <strong>Android / Máy tính</strong>: Cấp quyền thông báo là hệ thống Web Push sẽ tự động gửi nhắc nhở đến thiết bị ngay cả khi đóng trình duyệt.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
